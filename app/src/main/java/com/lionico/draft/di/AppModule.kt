@@ -1,4 +1,4 @@
-package com.lionico.Draft.di
+package com.lionico.draft.di
 
 import android.content.Context
 import dagger.Module

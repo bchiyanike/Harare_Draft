@@ -1,4 +1,4 @@
-package com.lionico.Draft.ui.theme
+package com.lionico.draft.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

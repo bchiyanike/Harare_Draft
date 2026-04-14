@@ -1,5 +1,5 @@
 // app/src/main/java/com/lionico/template/ui/theme/Typography.kt
-package com.lionico.Draft.ui.theme
+package com.lionico.draft.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
