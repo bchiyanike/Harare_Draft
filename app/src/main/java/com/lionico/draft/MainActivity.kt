@@ -1,20 +1,23 @@
-// File: app/src/main/java/com/lionico/template/MainActivity.kt
+// File: app/src/main/java/com/lionico/draft/MainActivity.kt
 package com.lionico.draft
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.lionico.draft.ui.screen.GameScreen
+import com.lionico.draft.ui.screen.MainMenuScreen
 import com.lionico.draft.ui.theme.LionicoTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -22,12 +25,8 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Install Android 12+ splash screen
         installSplashScreen()
-
         super.onCreate(savedInstanceState)
-
-        // Draw behind system bars
         enableEdgeToEdge()
 
         setContent {
@@ -36,50 +35,72 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-
-                        // Header
-                        Text(
-                            text = "TEMPLATE",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Description
-                        Text(
-                            text = "This is a starter template application.",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text =
-                                "Use this project as a foundation for building new Android apps.\n\n" +
-                                "It includes:\n" +
-                                "• Jetpack Compose\n" +
-                                "• Material 3 design\n" +
-                                "• Kotlin + KSP\n" +
-                                "• Hilt dependency injection\n" +
-                                "• Modern Gradle version catalog\n\n" +
-                                "Replace this screen with your own UI and features.",
-                            fontSize = 15.sp,
-                            lineHeight = 22.sp
-                        )
-                    }
+                    AppNavigation()
                 }
             }
         }
     }
+}
+
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = "main_menu"
+    ) {
+        composable("main_menu") {
+            MainMenuScreen(
+                onPlayVsPlayer = {
+                    navController.navigate("game/player_vs_player/medium")
+                },
+                onPlayVsComputer = { difficulty ->
+                    navController.navigate("game/player_vs_computer/${difficulty.name.lowercase()}")
+                }
+            )
+        }
+
+        composable(
+            route = "game/{mode}/{difficulty}",
+            arguments = listOf(
+                navArgument("mode") { type = NavType.StringType },
+                navArgument("difficulty") { 
+                    type = NavType.StringType
+                    defaultValue = "medium"
+                }
+            )
+        ) { backStackEntry ->
+            val mode = backStackEntry.arguments?.getString("mode") ?: "player_vs_player"
+            val difficultyString = backStackEntry.arguments?.getString("difficulty") ?: "medium"
+            
+            val gameMode = when (mode) {
+                "player_vs_computer" -> GameMode.PLAYER_VS_COMPUTER
+                else -> GameMode.PLAYER_VS_PLAYER
+            }
+            
+            val difficulty = when (difficultyString.lowercase()) {
+                "easy" -> Difficulty.EASY
+                "hard" -> Difficulty.HARD
+                else -> Difficulty.MEDIUM
+            }
+            
+            GameScreen(
+                gameMode = gameMode,
+                difficulty = difficulty,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+    }
+}
+
+enum class GameMode {
+    PLAYER_VS_PLAYER,
+    PLAYER_VS_COMPUTER
+}
+
+enum class Difficulty {
+    EASY, MEDIUM, HARD
 }
