@@ -1,9 +1,17 @@
-// File: app/src/main/java/com/lionico/template/ui/theme/Colors.kt
+// File: app/src/main/java/com/lionico/draft/ui/theme/Colors.kt
 package com.lionico.draft.ui.theme
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+
+// Game-specific colors
+val DarkSquareColor = Color(0xFF8B4513)      // Brown for dark squares
+val LightSquareColor = Color(0xFFF5DEB3)     // Wheat/beige for light squares
+val Player1PieceColor = Color(0xFFD32F2F)    // Red for bottom player
+val Player2PieceColor = Color(0xFF1976D2)    // Blue for top player
+val ValidMoveHighlight = Color(0xFF4CAF50).copy(alpha = 0.4f)  // Green with transparency
+val SelectedPieceBorder = Color(0xFFFFD700)  // Gold for selected piece
 
 val LightColorScheme = lightColorScheme(
     primary = Color(0xFF6750A4),
