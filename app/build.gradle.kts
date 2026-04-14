@@ -10,11 +10,11 @@ plugins {
 }
 
 android {
-    namespace = "com.lionico.template"
+    namespace = "com.lionico.Draft"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.lionico.template"
+        applicationId = "com.lionico.Draft"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

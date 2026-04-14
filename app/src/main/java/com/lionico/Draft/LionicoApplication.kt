@@ -1,4 +1,4 @@
-package com.lionico.template
+package com.lionico.Draft
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
