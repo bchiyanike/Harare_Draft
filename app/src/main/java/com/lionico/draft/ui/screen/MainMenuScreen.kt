@@ -22,14 +22,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lionico.draft.R
 import com.lionico.draft.data.ai.Difficulty
 
-/**
- * Main menu screen with game mode selection.
- */
 @Composable
 fun MainMenuScreen(
     onPlayVsPlayer: () -> Unit,
@@ -45,9 +44,8 @@ fun MainMenuScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Title
         Text(
-            text = "African Draughts",
+            text = stringResource(R.string.app_name),
             fontSize = 36.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -56,14 +54,13 @@ fun MainMenuScreen(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "Classic Strategy Board Game",
+            text = stringResource(R.string.tagline),
             fontSize = 16.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         Spacer(modifier = Modifier.height(48.dp))
         
-        // Game mode cards
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -77,7 +74,7 @@ fun MainMenuScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Player vs Player",
+                    text = stringResource(R.string.play_vs_player),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -85,7 +82,7 @@ fun MainMenuScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "Play against a friend on the same device",
+                    text = stringResource(R.string.play_vs_player_desc),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -96,7 +93,7 @@ fun MainMenuScreen(
                     onClick = onPlayVsPlayer,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Start Game")
+                    Text(stringResource(R.string.start_game))
                 }
             }
         }
@@ -114,7 +111,7 @@ fun MainMenuScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Player vs Computer",
+                    text = stringResource(R.string.play_vs_computer),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -122,7 +119,7 @@ fun MainMenuScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "Challenge the AI opponent",
+                    text = stringResource(R.string.play_vs_computer_desc),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -143,7 +140,7 @@ fun MainMenuScreen(
                         onClick = { showDifficultySelection = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Choose Difficulty")
+                        Text(stringResource(R.string.choose_difficulty))
                     }
                 }
             }
@@ -151,7 +148,6 @@ fun MainMenuScreen(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Rules summary
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -162,7 +158,7 @@ fun MainMenuScreen(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Quick Rules",
+                    text = stringResource(R.string.quick_rules),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -170,10 +166,7 @@ fun MainMenuScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "• Men move forward diagonally\n" +
-                           "• Capture by jumping over opponent's pieces\n" +
-                           "• Captures are compulsory\n" +
-                           "• Reach the far side to become a King",
+                    text = stringResource(R.string.rules_text),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 18.sp
@@ -199,7 +192,7 @@ private fun DifficultySelector(
                 containerColor = MaterialTheme.colorScheme.secondary
             )
         ) {
-            Text("Easy")
+            Text(stringResource(R.string.difficulty_easy))
         }
         
         Button(
@@ -209,7 +202,7 @@ private fun DifficultySelector(
                 containerColor = MaterialTheme.colorScheme.secondary
             )
         ) {
-            Text("Medium")
+            Text(stringResource(R.string.difficulty_medium))
         }
         
         Button(
@@ -219,14 +212,14 @@ private fun DifficultySelector(
                 containerColor = MaterialTheme.colorScheme.secondary
             )
         ) {
-            Text("Hard")
+            Text(stringResource(R.string.difficulty_hard))
         }
         
         OutlinedButton(
             onClick = onCancel,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Cancel")
+            Text(stringResource(R.string.cancel))
         }
     }
 }
