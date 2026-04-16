@@ -1,10 +1,15 @@
+// File: app/src/main/java/com/lionico/draft/di/AppModule.kt
 package com.lionico.draft.di
 
-import android.content.Context
+import com.lionico.draft.data.ai.AIPlayer
+import com.lionico.draft.data.engine.GameEngine
+import com.lionico.draft.domain.usecase.CheckGameOverUseCase
+import com.lionico.draft.domain.usecase.ExecuteMoveUseCase
+import com.lionico.draft.domain.usecase.GetAIMoveUseCase
+import com.lionico.draft.domain.usecase.ValidateMoveUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -12,23 +17,29 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // Example: Providing a Singleton Database instance
-    // @Provides
-    // @Singleton
-    // fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-    //     return Room.databaseBuilder(context, AppDatabase::class.java, "app_db").build()
-    // }
-
-    // --- ADVANCED: Retrofit/Networking ---
-    // Uncomment when you add networking
-    /*
     @Provides
     @Singleton
-    fun provideApiService(): ApiService {
-        return Retrofit.Builder()
-            .baseUrl("https://api.lionico.com/")
-            .build()
-            .create(ApiService::class.java)
-    }
-    */
+    fun provideGameEngine(): GameEngine = GameEngine()
+
+    @Provides
+    @Singleton
+    fun provideAIPlayer(): AIPlayer = AIPlayer()
+
+    @Provides
+    fun provideValidateMoveUseCase(gameEngine: GameEngine): ValidateMoveUseCase =
+        ValidateMoveUseCase(gameEngine)
+
+    @Provides
+    fun provideExecuteMoveUseCase(gameEngine: GameEngine): ExecuteMoveUseCase =
+        ExecuteMoveUseCase(gameEngine)
+
+    @Provides
+    fun provideCheckGameOverUseCase(gameEngine: GameEngine): CheckGameOverUseCase =
+        CheckGameOverUseCase(gameEngine)
+
+    @Provides
+    fun provideGetAIMoveUseCase(
+        gameEngine: GameEngine,
+        aiPlayer: AIPlayer
+    ): GetAIMoveUseCase = GetAIMoveUseCase(gameEngine, aiPlayer)
 }
