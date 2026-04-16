@@ -12,11 +12,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.lionico.draft.R
 
-/**
- * Game control buttons displayed below the board.
- */
 @Composable
 fun GameControls(
     onNewGame: () -> Unit,
@@ -33,7 +32,7 @@ fun GameControls(
             onClick = onBack,
             modifier = Modifier.weight(1f)
         ) {
-            Text("Menu")
+            Text(stringResource(R.string.menu))
         }
         
         Button(
@@ -43,7 +42,7 @@ fun GameControls(
                 containerColor = MaterialTheme.colorScheme.primary
             )
         ) {
-            Text("New Game")
+            Text(stringResource(R.string.new_game))
         }
     }
 }
