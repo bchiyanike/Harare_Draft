@@ -21,17 +21,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Game mode selection.
- */
 enum class GameMode {
     PLAYER_VS_PLAYER,
     PLAYER_VS_COMPUTER
 }
 
-/**
- * ViewModel managing the game screen state and user interactions.
- */
 @HiltViewModel
 class GameViewModel @Inject constructor(
     private val gameEngine: GameEngine,
@@ -41,7 +35,6 @@ class GameViewModel @Inject constructor(
     private val getAIMoveUseCase: GetAIMoveUseCase
 ) : ViewModel() {
 
-    // UI State
     private val _boardState = MutableStateFlow(gameEngine.getBoard())
     val boardState: StateFlow<Board> = _boardState.asStateFlow()
 
@@ -66,28 +59,19 @@ class GameViewModel @Inject constructor(
     private val _winner = MutableStateFlow<Player?>(null)
     val winner: StateFlow<Player?> = _winner.asStateFlow()
 
-    // Game configuration
     private var gameMode = GameMode.PLAYER_VS_PLAYER
     private var aiDifficulty = Difficulty.MEDIUM
 
-    /**
-     * Sets the game mode and difficulty for AI games.
-     */
     fun setGameMode(mode: GameMode, difficulty: Difficulty = Difficulty.MEDIUM) {
         this.gameMode = mode
         this.aiDifficulty = difficulty
         resetGame()
     }
 
-    /**
-     * Handles square click events from the board.
-     */
     fun onSquareClick(position: Position) {
-        // Ignore clicks if AI is thinking or game is over
         if (_isAIThinking.value) return
         if (_gameStatus.value != GameStatus.ONGOING) return
 
-        // In Player vs Computer mode, only allow clicks on current player's turn
         if (gameMode == GameMode.PLAYER_VS_COMPUTER && 
             _currentPlayer.value == Player.PLAYER_2) {
             return
@@ -97,23 +81,17 @@ class GameViewModel @Inject constructor(
 
         when {
             selected == null -> {
-                // Try to select a piece
                 selectPieceAt(position)
             }
             selected == position -> {
-                // Deselect the same piece
                 clearSelection()
             }
             else -> {
-                // Try to move to the clicked position
                 tryMove(selected, position)
             }
         }
     }
 
-    /**
-     * Selects a piece at the given position.
-     */
     private fun selectPieceAt(position: Position) {
         val piece = _boardState.value.getPieceAt(position)
         if (piece?.player == _currentPlayer.value) {
@@ -124,16 +102,12 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Attempts to move from one position to another.
-     */
     private fun tryMove(from: Position, to: Position) {
         val move = _validMoves.value.find { it.from == from && it.to == to }
         
         if (move != null) {
             executeMove(move)
         } else {
-            // Try selecting a different piece instead
             val piece = _boardState.value.getPieceAt(to)
             if (piece?.player == _currentPlayer.value) {
                 selectPieceAt(to)
@@ -143,16 +117,12 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Executes a move and updates the UI state.
-     */
     private fun executeMove(move: Move) {
         val success = executeMoveUseCase(move)
         if (success) {
             updateUIState()
             clearSelection()
 
-            // Check if AI should make a move
             if (gameMode == GameMode.PLAYER_VS_COMPUTER &&
                 _currentPlayer.value == Player.PLAYER_2 &&
                 _gameStatus.value == GameStatus.ONGOING) {
@@ -161,9 +131,6 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Triggers the AI to make its move.
-     */
     private fun makeAIMove() {
         if (_isAIThinking.value) return
 
@@ -181,9 +148,6 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Updates all UI state flows from the game engine.
-     */
     private fun updateUIState() {
         _boardState.value = gameEngine.getBoard()
         _currentPlayer.value = gameEngine.getCurrentPlayer()
@@ -191,18 +155,12 @@ class GameViewModel @Inject constructor(
         _winner.value = checkGameOverUseCase.getWinner()
     }
 
-    /**
-     * Clears the current piece selection.
-     */
     private fun clearSelection() {
         _selectedPosition.value = null
         _validMoves.value = emptyList()
         _validMovePositions.value = emptySet()
     }
 
-    /**
-     * Resets the game to initial state.
-     */
     fun resetGame() {
         gameEngine.newGame()
         updateUIState()
@@ -210,9 +168,6 @@ class GameViewModel @Inject constructor(
         _isAIThinking.value = false
     }
 
-    /**
-     * Returns a human-readable status message.
-     */
     fun getStatusMessage(): String {
         return when (_gameStatus.value) {
             GameStatus.ONGOING -> {
@@ -225,9 +180,6 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Gets piece counts for both players.
-     */
     fun getPieceCounts(): Pair<Int, Int> {
         return gameEngine.getPieceCounts()
     }
