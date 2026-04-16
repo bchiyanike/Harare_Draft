@@ -14,10 +14,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.lionico.draft.R
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.model.GameStatus
 import com.lionico.draft.ui.component.BoardView
@@ -26,9 +28,6 @@ import com.lionico.draft.ui.component.GameStatusBar
 import com.lionico.draft.ui.viewmodel.GameMode
 import com.lionico.draft.ui.viewmodel.GameViewModel
 
-/**
- * Main game screen that displays the board and handles gameplay.
- */
 @Composable
 fun GameScreen(
     gameMode: GameMode,
@@ -45,7 +44,6 @@ fun GameScreen(
     val isAIThinking by viewModel.isAIThinking.collectAsState()
     val pieceCounts = viewModel.getPieceCounts()
     
-    // Initialize game mode when screen loads
     LaunchedEffect(gameMode, difficulty) {
         viewModel.setGameMode(gameMode, difficulty)
     }
@@ -56,8 +54,8 @@ fun GameScreen(
                 title = {
                     Text(
                         text = when (gameMode) {
-                            GameMode.PLAYER_VS_PLAYER -> "Player vs Player"
-                            GameMode.PLAYER_VS_COMPUTER -> "Player vs Computer"
+                            GameMode.PLAYER_VS_PLAYER -> stringResource(R.string.play_vs_player)
+                            GameMode.PLAYER_VS_COMPUTER -> stringResource(R.string.play_vs_computer)
                         },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium
@@ -75,7 +73,6 @@ fun GameScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Game status bar
             GameStatusBar(
                 currentPlayer = currentPlayer,
                 player1Pieces = pieceCounts.first,
@@ -84,7 +81,6 @@ fun GameScreen(
                 modifier = Modifier.padding(top = 8.dp)
             )
             
-            // Game board
             BoardView(
                 board = boardState,
                 selectedPosition = selectedPosition,
@@ -95,7 +91,6 @@ fun GameScreen(
                     .padding(8.dp)
             )
             
-            // Game controls
             GameControls(
                 onNewGame = { viewModel.resetGame() },
                 onBack = onNavigateBack,
@@ -103,7 +98,6 @@ fun GameScreen(
             )
         }
         
-        // Game over dialog
         if (gameStatus != GameStatus.ONGOING) {
             GameOverDialog(
                 gameStatus = gameStatus,
