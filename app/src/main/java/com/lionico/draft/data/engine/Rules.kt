@@ -1,39 +1,58 @@
 // File: app/src/main/java/com/lionico/draft/data/engine/Rules.kt
 package com.lionico.draft.data.engine
 
+import com.lionico.draft.data.model.PieceType
 import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.Position
 
 /**
  * Game rules and constants for African Draughts.
- * Contains direction vectors and helper functions for move validation.
+ * Uses row/col vectors instead of index offsets.
  */
 object Rules {
+
+    /**
+     * Movement direction vectors as (dr, dc) pairs.
+     * dr = change in row, dc = change in column.
+     */
+    data class Direction(val dr: Int, val dc: Int)
     
     /**
      * Movement directions for men (forward only).
-     * Values represent index offsets in the 32-element board array.
      * 
-     * For PLAYER_1 (bottom, moving up):
-     * -4 = up-left diagonal
-     * -5 = up-right diagonal
-     * 
-     * For PLAYER_2 (top, moving down):
-     * +4 = down-left diagonal
-     * +5 = down-right diagonal
+     * For PLAYER_1 (bottom, row 7, moving up): dr = -1
+     * For PLAYER_2 (top, row 0, moving down): dr = +1
      */
-    fun getManDirections(player: Player): List<Int> {
-        return when (player) {
-            Player.PLAYER_1 -> listOf(-4, -5)  // Moving up the board
-            Player.PLAYER_2 -> listOf(4, 5)    // Moving down the board
+    fun getManDirections(player: Player): List<Direction> {
+        val dr = when (player) {
+            Player.PLAYER_1 -> -1  // Moving up (decreasing row)
+            Player.PLAYER_2 -> 1   // Moving down (increasing row)
         }
+        return listOf(
+            Direction(dr, -1),  // Left diagonal
+            Direction(dr, 1)    // Right diagonal
+        )
     }
     
     /**
      * Movement directions for kings (all diagonals).
-     * Kings can move both forward and backward.
      */
-    val kingDirections = listOf(-5, -4, 4, 5)
+    val kingDirections = listOf(
+        Direction(-1, -1),  // Up-left
+        Direction(-1, 1),   // Up-right
+        Direction(1, -1),   // Down-left
+        Direction(1, 1)     // Down-right
+    )
+    
+    /**
+     * Returns the valid movement directions for a given piece type and player.
+     */
+    fun getDirections(pieceType: PieceType, player: Player): List<Direction> {
+        return when (pieceType) {
+            PieceType.MAN -> getManDirections(player)
+            PieceType.KING -> kingDirections
+        }
+    }
     
     /**
      * Checks if a position is on the king row (promotion row).
@@ -42,36 +61,38 @@ object Rules {
      * For PLAYER_2 (top player): King row is row 7 (bottom)
      */
     fun isKingRow(position: Position, player: Player): Boolean {
-        val row = position.row()
         return when (player) {
-            Player.PLAYER_1 -> row == 0
-            Player.PLAYER_2 -> row == 7
+            Player.PLAYER_1 -> position.row == 0
+            Player.PLAYER_2 -> position.row == 7
         }
     }
     
     /**
-     * Checks if moving from a position in a given direction is valid.
-     * Prevents wrapping around board edges.
-     * 
-     * @param from Starting position
-     * @param direction Index offset to move
-     * @return true if the move stays on the board and doesn't wrap
+     * Checks if a move from start to end is a valid capture.
+     * A capture must:
+     * - Move exactly 2 rows and 2 columns (diagonal jump)
+     * - Land on a playable dark square
      */
-    fun isValidDirection(from: Position, direction: Int): Boolean {
-        val fromRow = from.row()
-        val fromCol = from.col()
-        val toIndex = from.index + direction
-        
-        // Check if destination is within board bounds
-        if (toIndex !in 0..31) return false
-        
-        val toPosition = Position(toIndex)
-        val toRow = toPosition.row()
-        val toCol = toPosition.col()
-        
-        // Valid diagonal move must change both row and column by exactly 1
-        return kotlin.math.abs(fromCol - toCol) == 1 && 
-               kotlin.math.abs(fromRow - toRow) == 1
+    fun isValidCaptureMove(start: Position, end: Position): Boolean {
+        val dr = end.row - start.row
+        val dc = end.col - start.col
+        return kotlin.math.abs(dr) == 2 && 
+               kotlin.math.abs(dc) == 2 && 
+               end.isPlayable
+    }
+    
+    /**
+     * Checks if a move from start to end is a valid regular move.
+     * A regular move must:
+     * - Move exactly 1 row and 1 column (diagonal step)
+     * - Land on a playable dark square
+     */
+    fun isValidRegularMove(start: Position, end: Position): Boolean {
+        val dr = end.row - start.row
+        val dc = end.col - start.col
+        return kotlin.math.abs(dr) == 1 && 
+               kotlin.math.abs(dc) == 1 && 
+               end.isPlayable
     }
     
     /**
@@ -80,12 +101,7 @@ object Rules {
     const val STARTING_PIECE_COUNT = 12
     
     /**
-     * Board size (8x8).
+     * Board size (8×8).
      */
     const val BOARD_SIZE = 8
-    
-    /**
-     * Number of playable dark squares.
-     */
-    const val PLAYABLE_SQUARES = 32
 }
