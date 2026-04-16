@@ -8,14 +8,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.lionico.draft.R
 import com.lionico.draft.data.model.GameStatus
 import com.lionico.draft.data.model.Player
 
-/**
- * Dialog displayed when the game ends.
- * Shows the winner and provides options to restart or return to menu.
- */
 @Composable
 fun GameOverDialog(
     gameStatus: GameStatus,
@@ -25,17 +23,17 @@ fun GameOverDialog(
     onDismiss: () -> Unit = {}
 ) {
     val title = when (gameStatus) {
-        GameStatus.PLAYER_1_WINS -> "Player 1 Wins!"
-        GameStatus.PLAYER_2_WINS -> "Player 2 Wins!"
-        GameStatus.DRAW -> "It's a Draw!"
-        else -> "Game Over"
+        GameStatus.PLAYER_1_WINS -> stringResource(R.string.player_1_wins)
+        GameStatus.PLAYER_2_WINS -> stringResource(R.string.player_2_wins)
+        GameStatus.DRAW -> stringResource(R.string.draw)
+        else -> stringResource(R.string.game_over)
     }
     
     val message = when (gameStatus) {
-        GameStatus.PLAYER_1_WINS -> "Congratulations! Player 1 has won the game."
-        GameStatus.PLAYER_2_WINS -> "Congratulations! Player 2 has won the game."
-        GameStatus.DRAW -> "Neither player can force a win. The game ends in a draw."
-        else -> "The game has ended."
+        GameStatus.PLAYER_1_WINS -> stringResource(R.string.congratulations_p1)
+        GameStatus.PLAYER_2_WINS -> stringResource(R.string.congratulations_p2)
+        GameStatus.DRAW -> stringResource(R.string.draw_message)
+        else -> ""
     }
     
     AlertDialog(
@@ -57,12 +55,12 @@ fun GameOverDialog(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text("New Game")
+                Text(stringResource(R.string.new_game))
             }
         },
         dismissButton = {
             OutlinedButton(onClick = onMainMenu) {
-                Text("Main Menu")
+                Text(stringResource(R.string.main_menu))
             }
         }
     )
