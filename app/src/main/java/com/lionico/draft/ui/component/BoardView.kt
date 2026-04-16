@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lionico.draft.data.engine.Board
 import com.lionico.draft.data.model.Position
@@ -52,11 +51,9 @@ fun BoardView(
             }
             
             selectedPosition?.let { pos ->
-                val row = pos.row().toFloat()
-                val col = pos.col().toFloat()
                 drawRect(
                     color = Color.Yellow.copy(alpha = 0.3f),
-                    topLeft = Offset(col * squareSize, row * squareSize),
+                    topLeft = Offset(pos.col * squareSize, pos.row * squareSize),
                     size = androidx.compose.ui.geometry.Size(squareSize, squareSize)
                 )
             }
@@ -66,36 +63,34 @@ fun BoardView(
             for (row in 0..7) {
                 for (col in 0..7) {
                     if ((row + col) % 2 != 0) {
-                        val position = Position.fromRowCol(row, col)
-                        if (position != null) {
-                            val piece = board.getPieceAt(position)
-                            val isValidMove = validMovePositions.contains(position)
-                            val isSelected = selectedPosition == position
-                            
-                            if (piece != null) {
-                                PieceView(
-                                    piece = piece,
-                                    isSelected = isSelected,
-                                    modifier = Modifier
-                                        .offset(
-                                            x = (col * squareSizeDp.value).dp,
-                                            y = (row * squareSizeDp.value).dp
-                                        )
-                                        .size(squareSizeDp),
-                                    onClick = { onSquareClick(position) }
-                                )
-                            } else if (isValidMove) {
-                                EmptySquareView(
-                                    isValidMove = true,
-                                    modifier = Modifier
-                                        .offset(
-                                            x = (col * squareSizeDp.value).dp,
-                                            y = (row * squareSizeDp.value).dp
-                                        )
-                                        .size(squareSizeDp),
-                                    onClick = { onSquareClick(position) }
-                                )
-                            }
+                        val position = Position(row, col)
+                        val piece = board.getPieceAt(position)
+                        val isValidMove = validMovePositions.contains(position)
+                        val isSelected = selectedPosition == position
+                        
+                        if (piece != null) {
+                            PieceView(
+                                piece = piece,
+                                isSelected = isSelected,
+                                modifier = Modifier
+                                    .offset(
+                                        x = (col * squareSizeDp.value).dp,
+                                        y = (row * squareSizeDp.value).dp
+                                    )
+                                    .size(squareSizeDp),
+                                onClick = { onSquareClick(position) }
+                            )
+                        } else if (isValidMove) {
+                            EmptySquareView(
+                                isValidMove = true,
+                                modifier = Modifier
+                                    .offset(
+                                        x = (col * squareSizeDp.value).dp,
+                                        y = (row * squareSizeDp.value).dp
+                                    )
+                                    .size(squareSizeDp),
+                                onClick = { onSquareClick(position) }
+                            )
                         }
                     }
                 }
