@@ -3,11 +3,15 @@
 <resources>
     <!-- App Name -->
     <string name="app_name">African Draughts</string>
+    <string name="tagline">Classic Strategy Board Game</string>
 
     <!-- Main Menu -->
     <string name="play_vs_player">Player vs Player</string>
+    <string name="play_vs_player_desc">Play against a friend on the same device</string>
     <string name="play_vs_computer">Player vs Computer</string>
+    <string name="play_vs_computer_desc">Challenge the AI opponent</string>
     <string name="choose_difficulty">Choose Difficulty</string>
+    <string name="start_game">Start Game</string>
     <string name="quick_rules">Quick Rules</string>
     <string name="rules_text">• Men move forward diagonally\n• Capture by jumping over opponent\'s pieces\n• Captures are compulsory\n• Reach the far side to become a King</string>
     
@@ -17,13 +21,10 @@
     <string name="difficulty_hard">Hard</string>
     
     <!-- Game Screen -->
-    <string name="player_1_turn">Player 1\'s Turn</string>
-    <string name="player_2_turn">Player 2\'s Turn</string>
+    <string name="player_1_short">P1</string>
+    <string name="player_2_short">P2</string>
     <string name="ai_thinking">AI Thinking…</string>
     <string name="turn">Turn</string>
-    <string name="player_1_wins">Player 1 Wins!</string>
-    <string name="player_2_wins">Player 2 Wins!</string>
-    <string name="draw">Draw!</string>
     <string name="new_game">New Game</string>
     <string name="menu">Menu</string>
     <string name="main_menu">Main Menu</string>
@@ -31,6 +32,9 @@
     
     <!-- Game Over Dialog -->
     <string name="game_over">Game Over</string>
+    <string name="player_1_wins">Player 1 Wins!</string>
+    <string name="player_2_wins">Player 2 Wins!</string>
+    <string name="draw">Draw!</string>
     <string name="congratulations_p1">Congratulations! Player 1 has won the game.</string>
     <string name="congratulations_p2">Congratulations! Player 2 has won the game.</string>
     <string name="draw_message">Neither player can force a win. The game ends in a draw.</string>
