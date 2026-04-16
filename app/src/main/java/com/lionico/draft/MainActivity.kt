@@ -16,9 +16,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.ui.screen.GameScreen
 import com.lionico.draft.ui.screen.MainMenuScreen
 import com.lionico.draft.ui.theme.LionicoTheme
+import com.lionico.draft.ui.viewmodel.GameMode
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -65,7 +67,7 @@ fun AppNavigation() {
             route = "game/{mode}/{difficulty}",
             arguments = listOf(
                 navArgument("mode") { type = NavType.StringType },
-                navArgument("difficulty") { 
+                navArgument("difficulty") {
                     type = NavType.StringType
                     defaultValue = "medium"
                 }
@@ -94,13 +96,4 @@ fun AppNavigation() {
             )
         }
     }
-}
-
-enum class GameMode {
-    PLAYER_VS_PLAYER,
-    PLAYER_VS_COMPUTER
-}
-
-enum class Difficulty {
-    EASY, MEDIUM, HARD
 }
