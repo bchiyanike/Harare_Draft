@@ -1,10 +1,100 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- File: app/src/main/res/drawable/ic_launcher_foreground.xml -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    
+    <!-- Knight/Draughts piece body -->
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M54,28 
+                         C40,28 32,38 32,50 
+                         C32,58 36,64 42,68 
+                         L42,72 
+                         C42,78 36,82 30,84 
+                         L30,88 
+                         L78,88 
+                         L78,84 
+                         C72,82 66,78 66,72 
+                         L66,68 
+                         C72,64 76,58 76,50 
+                         C76,38 68,28 54,28 Z"/>
+    
+    <!-- Piece base -->
+    <path
+        android:fillColor="#B71C1C"
+        android:pathData="M30,84 
+                         C36,82 42,78 42,72 
+                         L42,88 
+                         Z"/>
+    
+    <path
+        android:fillColor="#B71C1C"
+        android:pathData="M66,84 
+                         C60,82 54,78 54,72 
+                         L54,88 
+                         Z"/>
+    
+    <!-- Crown base -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M40,36 
+                         L44,28 
+                         L48,34 
+                         L54,24 
+                         L60,34 
+                         L64,28 
+                         L68,36 
+                         Z"/>
+    
+    <!-- Crown top edge -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M40,36 
+                         L68,36 
+                         L66,32 
+                         L42,32 
+                         Z"/>
+    
+    <!-- Crown jewels -->
+    <circle
+        android:fillColor="#FF5722"
+        android:centerX="44"
+        android:centerY="30"
+        android:radius="2.5"/>
+    
+    <circle
+        android:fillColor="#4CAF50"
+        android:centerX="54"
+        android:centerY="26"
+        android:radius="2.5"/>
+    
+    <circle
+        android:fillColor="#2196F3"
+        android:centerX="64"
+        android:centerY="30"
+        android:radius="2.5"/>
+    
+    <!-- Eye -->
+    <circle
+        android:fillColor="#FFFFFF"
+        android:centerX="50"
+        android:centerY="46"
+        android:radius="3"/>
+    
+    <circle
+        android:fillColor="#000000"
+        android:centerX="51"
+        android:centerY="46"
+        android:radius="1.5"/>
+    
+    <!-- Highlight/shine -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,20L70,88H38Z"/>
-</vector>
+        android:fillAlpha="0.2"
+        android:pathData="M42,36 
+                         C42,36 44,48 48,52 
+                         C46,50 44,42 42,36 Z"/>
+</vector> 
