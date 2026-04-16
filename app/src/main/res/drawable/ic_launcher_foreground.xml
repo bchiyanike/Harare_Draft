@@ -58,37 +58,27 @@
                          L42,32 
                          Z"/>
     
-    <!-- Crown jewels -->
-    <circle
+    <!-- Crown jewels - fixed with proper circle elements -->
+    <path
         android:fillColor="#FF5722"
-        android:centerX="44"
-        android:centerY="30"
-        android:radius="2.5"/>
+        android:pathData="M44,30 A2.5,2.5 0 1,1 44,29.9 Z"/>
     
-    <circle
+    <path
         android:fillColor="#4CAF50"
-        android:centerX="54"
-        android:centerY="26"
-        android:radius="2.5"/>
+        android:pathData="M54,26 A2.5,2.5 0 1,1 54,25.9 Z"/>
     
-    <circle
+    <path
         android:fillColor="#2196F3"
-        android:centerX="64"
-        android:centerY="30"
-        android:radius="2.5"/>
+        android:pathData="M64,30 A2.5,2.5 0 1,1 64,29.9 Z"/>
     
     <!-- Eye -->
-    <circle
+    <path
         android:fillColor="#FFFFFF"
-        android:centerX="50"
-        android:centerY="46"
-        android:radius="3"/>
+        android:pathData="M50,46 A3,3 0 1,1 50,45.9 Z"/>
     
-    <circle
+    <path
         android:fillColor="#000000"
-        android:centerX="51"
-        android:centerY="46"
-        android:radius="1.5"/>
+        android:pathData="M51,46 A1.5,1.5 0 1,1 51,45.9 Z"/>
     
     <!-- Highlight/shine -->
     <path
@@ -97,4 +87,4 @@
         android:pathData="M42,36 
                          C42,36 44,48 48,52 
                          C46,50 44,42 42,36 Z"/>
-</vector> 
+</vector>
