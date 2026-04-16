@@ -3,6 +3,7 @@ package com.lionico.draft.data.engine
 
 import com.lionico.draft.data.model.GameStatus
 import com.lionico.draft.data.model.Move
+import com.lionico.draft.data.model.PieceType
 import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.Position
 
@@ -17,7 +18,6 @@ class GameEngine {
     private var gameStatus = GameStatus.ONGOING
     private var winner: Player? = null
     
-    // Track if the current player is in the middle of a multi-capture sequence
     private var isMultiCaptureInProgress = false
     private var multiCapturePiecePosition: Position? = null
     
@@ -50,7 +50,6 @@ class GameEngine {
         
         val validator = MoveValidator(board)
         
-        // If in multi-capture, only return captures from the active piece
         return if (isMultiCaptureInProgress && multiCapturePiecePosition != null) {
             validator.getCaptureMovesFrom(multiCapturePiecePosition!!)
         } else {
@@ -68,7 +67,6 @@ class GameEngine {
         val piece = board.getPieceAt(move.from) ?: return false
         if (piece.player != currentPlayer) return false
         
-        // Validate the move
         val validator = MoveValidator(board)
         val validMoves = if (isMultiCaptureInProgress && multiCapturePiecePosition != null) {
             validator.getCaptureMovesFrom(multiCapturePiecePosition!!)
@@ -85,13 +83,13 @@ class GameEngine {
         move.capturedPositions.forEach { board.setPieceAt(it, null) }
         
         val finalPiece = if (move.promotedToKing) {
-            piece.promote()
+            piece.copy(type = PieceType.KING)
         } else {
             piece
         }
         board.setPieceAt(move.to, finalPiece)
         
-        // Check for additional captures from the new position
+        // Check for additional captures
         val additionalCaptures = if (move.isCapture) {
             validator.getCaptureMovesFrom(move.to)
         } else {
@@ -99,19 +97,15 @@ class GameEngine {
         }
         
         if (additionalCaptures.isNotEmpty() && move.isCapture) {
-            // Multi-capture in progress - same player continues
             isMultiCaptureInProgress = true
             multiCapturePiecePosition = move.to
         } else {
-            // Turn complete - switch player
             isMultiCaptureInProgress = false
             multiCapturePiecePosition = null
             currentPlayer = currentPlayer.opponent()
         }
         
-        // Check if the game is over
         updateGameStatus()
-        
         return true
     }
     
@@ -139,7 +133,6 @@ class GameEngine {
     private fun updateGameStatus() {
         val validator = MoveValidator(board)
         
-        // Check if current player has no valid moves
         if (!validator.hasAnyValidMove(currentPlayer)) {
             gameStatus = if (currentPlayer == Player.PLAYER_1) {
                 GameStatus.PLAYER_2_WINS
@@ -150,7 +143,6 @@ class GameEngine {
             return
         }
         
-        // Check if either player has no pieces
         val player1Pieces = board.countPieces(Player.PLAYER_1)
         val player2Pieces = board.countPieces(Player.PLAYER_2)
         
