@@ -54,10 +54,10 @@ fun AppNavigation() {
     ) {
         composable("main_menu") {
             MainMenuScreen(
-                onPlayVsPlayer = {
+                onPlayVsFriendSameDevice = {
                     navController.navigate("game/player_vs_player/medium")
                 },
-                onPlayVsComputer = { difficulty ->
+                onPlayVsAI = { difficulty ->
                     navController.navigate("game/player_vs_computer/${difficulty.name.lowercase()}")
                 }
             )
@@ -75,18 +75,18 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val mode = backStackEntry.arguments?.getString("mode") ?: "player_vs_player"
             val difficultyString = backStackEntry.arguments?.getString("difficulty") ?: "medium"
-            
+
             val gameMode = when (mode) {
                 "player_vs_computer" -> GameMode.PLAYER_VS_COMPUTER
                 else -> GameMode.PLAYER_VS_PLAYER
             }
-            
+
             val difficulty = when (difficultyString.lowercase()) {
                 "easy" -> Difficulty.EASY
                 "hard" -> Difficulty.HARD
                 else -> Difficulty.MEDIUM
             }
-            
+
             GameScreen(
                 gameMode = gameMode,
                 difficulty = difficulty,
