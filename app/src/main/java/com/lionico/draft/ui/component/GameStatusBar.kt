@@ -1,8 +1,10 @@
 // File: app/src/main/java/com/lionico/draft/ui/component/GameStatusBar.kt
 package com.lionico.draft.ui.component
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,16 +19,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lionico.draft.R
 import com.lionico.draft.data.model.Player
 import com.lionico.draft.ui.theme.Player1PieceColor
 import com.lionico.draft.ui.theme.Player2PieceColor
 
-/**
- * Status bar showing current player, turn indicator, and piece counts.
- */
 @Composable
 fun GameStatusBar(
     currentPlayer: Player,
@@ -51,23 +53,20 @@ fun GameStatusBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Player 1 info (Bottom)
             PlayerInfo(
-                playerName = "P1",
+                playerName = stringResource(R.string.player_1_short),
                 pieceCount = player1Pieces,
                 pieceColor = Player1PieceColor,
                 isActive = currentPlayer == Player.PLAYER_1
             )
 
-            // Turn indicator
             TurnIndicator(
                 currentPlayer = currentPlayer,
                 isAIThinking = isAIThinking
             )
 
-            // Player 2 info (Top)
             PlayerInfo(
-                playerName = "P2",
+                playerName = stringResource(R.string.player_2_short),
                 pieceCount = player2Pieces,
                 pieceColor = Player2PieceColor,
                 isActive = currentPlayer == Player.PLAYER_2
@@ -89,8 +88,7 @@ private fun PlayerInfo(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Piece color indicator
-            androidx.compose.foundation.Canvas(
+            Canvas(
                 modifier = Modifier.size(16.dp)
             ) {
                 drawCircle(
@@ -101,7 +99,7 @@ private fun PlayerInfo(
                     drawCircle(
                         color = Color.Yellow,
                         radius = size.minDimension / 2,
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        style = Stroke(
                             width = 3.dp.toPx()
                         )
                     )
@@ -142,12 +140,16 @@ private fun TurnIndicator(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = if (isAIThinking) "AI Thinking..." else "Turn",
+            text = if (isAIThinking) {
+                stringResource(R.string.ai_thinking)
+            } else {
+                stringResource(R.string.turn)
+            },
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
-        androidx.compose.foundation.layout.Box(
+        Box(
             modifier = Modifier
                 .size(40.dp)
                 .background(
@@ -161,7 +163,11 @@ private fun TurnIndicator(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = if (currentPlayer == Player.PLAYER_1) "P1" else "P2",
+                text = if (currentPlayer == Player.PLAYER_1) {
+                    stringResource(R.string.player_1_short)
+                } else {
+                    stringResource(R.string.player_2_short)
+                },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (currentPlayer == Player.PLAYER_1) {
