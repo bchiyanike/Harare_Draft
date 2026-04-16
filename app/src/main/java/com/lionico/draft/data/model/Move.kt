@@ -30,8 +30,8 @@ data class Move(
          * Returns an empty/invalid move. Used as a placeholder.
          */
         fun none(): Move = Move(
-            from = Position(0),
-            to = Position(0),
+            from = Position(0, 0),
+            to = Position(0, 0),
             capturedPositions = emptyList(),
             promotedToKing = false
         )
