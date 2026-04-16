@@ -1,9 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- File: app/src/main/res/values/strings.xml -->
 <resources>
-    <string name="app_name">Draft</string>
+    <!-- App Name -->
+    <string name="app_name">African Draughts</string>
 
+    <!-- Main Menu -->
+    <string name="play_vs_player">Player vs Player</string>
+    <string name="play_vs_computer">Player vs Computer</string>
+    <string name="choose_difficulty">Choose Difficulty</string>
+    <string name="quick_rules">Quick Rules</string>
+    <string name="rules_text">• Men move forward diagonally\n• Capture by jumping over opponent\'s pieces\n• Captures are compulsory\n• Reach the far side to become a King</string>
+    
+    <!-- Difficulty -->
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_medium">Medium</string>
+    <string name="difficulty_hard">Hard</string>
+    
+    <!-- Game Screen -->
+    <string name="player_1_turn">Player 1\'s Turn</string>
+    <string name="player_2_turn">Player 2\'s Turn</string>
+    <string name="ai_thinking">AI Thinking…</string>
+    <string name="turn">Turn</string>
+    <string name="player_1_wins">Player 1 Wins!</string>
+    <string name="player_2_wins">Player 2 Wins!</string>
+    <string name="draw">Draw!</string>
+    <string name="new_game">New Game</string>
+    <string name="menu">Menu</string>
+    <string name="main_menu">Main Menu</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Game Over Dialog -->
+    <string name="game_over">Game Over</string>
+    <string name="congratulations_p1">Congratulations! Player 1 has won the game.</string>
+    <string name="congratulations_p2">Congratulations! Player 2 has won the game.</string>
+    <string name="draw_message">Neither player can force a win. The game ends in a draw.</string>
+    
     <!-- Generic UI -->
     <string name="loading">Loading…</string>
     <string name="error_generic">Something went wrong</string>
     <string name="retry">Retry</string>
+    <string name="ok">OK</string>
+    <string name="close">Close</string>
 </resources>
