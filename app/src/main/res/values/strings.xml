@@ -15,11 +15,28 @@
     <string name="quick_rules">Quick Rules</string>
     <string name="rules_text">• Men move forward diagonally\n• Capture by jumping over opponent\'s pieces\n• Captures are compulsory\n• Reach the far side to become a King</string>
     
+    <!-- Main Menu - New -->
+    <string name="quick_play">QUICK PLAY</string>
+    <string name="play_with_friend">PLAY WITH A FRIEND</string>
+    <string name="live_now">LIVE NOW</string>
+    <string name="vs_friend">VS Friend</string>
+    <string name="vs_computer">VS Computer</string>
+    <string name="ai_battle">AI Battle</string>
+    <string name="same_device">Same Device</string>
+    <string name="pass_and_play">Pass and play</string>
+    <string name="bluetooth_hotspot">Bluetooth / Hotspot</string>
+    <string name="play_nearby">Play nearby</string>
+    <string name="internet">Internet</string>
+    <string name="play_online">Play online</string>
+    <string name="create_game">CREATE A GAME</string>
+    <string name="select_ai_difficulty">Select AI Difficulty</string>
+    <string name="coming_soon">Coming soon!</string>
+
     <!-- Difficulty -->
     <string name="difficulty_easy">Easy</string>
     <string name="difficulty_medium">Medium</string>
     <string name="difficulty_hard">Hard</string>
-    
+
     <!-- Game Screen -->
     <string name="player_1_short">P1</string>
     <string name="player_2_short">P2</string>
@@ -29,7 +46,7 @@
     <string name="menu">Menu</string>
     <string name="main_menu">Main Menu</string>
     <string name="cancel">Cancel</string>
-    
+
     <!-- Game Over Dialog -->
     <string name="game_over">Game Over</string>
     <string name="player_1_wins">Player 1 Wins!</string>
@@ -38,7 +55,7 @@
     <string name="congratulations_p1">Congratulations! Player 1 has won the game.</string>
     <string name="congratulations_p2">Congratulations! Player 2 has won the game.</string>
     <string name="draw_message">Neither player can force a win. The game ends in a draw.</string>
-    
+
     <!-- Generic UI -->
     <string name="loading">Loading…</string>
     <string name="error_generic">Something went wrong</string>
