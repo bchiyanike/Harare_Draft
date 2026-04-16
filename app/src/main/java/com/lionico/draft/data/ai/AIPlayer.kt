@@ -7,7 +7,6 @@ import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.PieceType
 import com.lionico.draft.data.model.Player
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  * AI opponent using Negamax algorithm with Alpha-Beta pruning.
@@ -15,16 +14,10 @@ import kotlin.math.min
  */
 class AIPlayer {
     
-    // Transposition table to cache evaluated positions
     private val transpositionTable = mutableMapOf<Long, Pair<Int, Int>>()
     
     /**
      * Returns the best move for the current board position.
-     * 
-     * @param board Current board state
-     * @param player The AI player (usually PLAYER_2)
-     * @param difficulty Difficulty level determining search depth
-     * @return The best move found
      */
     fun getBestMove(board: Board, player: Player, difficulty: Difficulty): Move {
         val validator = MoveValidator(board)
@@ -33,13 +26,11 @@ class AIPlayer {
         if (moves.isEmpty()) return Move.NONE
         if (moves.size == 1) return moves.first()
         
-        // Clear transposition table for new search
         transpositionTable.clear()
         
         var bestMove = moves.first()
         var bestScore = Int.MIN_VALUE
         
-        // Sort moves for better alpha-beta pruning (captures first)
         val sortedMoves = moves.sortedByDescending { it.captureCount }
         
         for (move in sortedMoves) {
@@ -65,7 +56,6 @@ class AIPlayer {
     
     /**
      * Negamax algorithm with alpha-beta pruning.
-     * Returns the score from the perspective of the current player.
      */
     private fun negamax(
         board: Board,
@@ -77,12 +67,10 @@ class AIPlayer {
         val validator = MoveValidator(board)
         val moves = validator.getValidMoves(player)
         
-        // Terminal conditions
         if (depth == 0 || moves.isEmpty()) {
             return Evaluation.evaluate(board, player)
         }
         
-        // Check transposition table
         val boardHash = computeBoardHash(board, player)
         transpositionTable[boardHash]?.let { (cachedDepth, cachedScore) ->
             if (cachedDepth >= depth) {
@@ -93,7 +81,6 @@ class AIPlayer {
         var currentAlpha = alpha
         var maxScore = Int.MIN_VALUE
         
-        // Sort moves for better pruning (captures first)
         val sortedMoves = moves.sortedByDescending { it.captureCount }
         
         for (move in sortedMoves) {
@@ -112,13 +99,11 @@ class AIPlayer {
             currentAlpha = max(currentAlpha, score)
             
             if (currentAlpha >= beta) {
-                break // Alpha-beta cutoff
+                break
             }
         }
         
-        // Store in transposition table
         transpositionTable[boardHash] = Pair(depth, maxScore)
-        
         return maxScore
     }
     
@@ -144,8 +129,16 @@ class AIPlayer {
      */
     private fun computeBoardHash(board: Board, player: Player): Long {
         var hash = 0L
-        for (i in 0..31) {
-            hash = hash * 31 + board.squares[i]
+        for (position in com.lionico.draft.data.model.Position.PLAYABLE_SQUARES) {
+            val piece = board.getPieceAt(position)
+            val pieceValue = when {
+                piece == null -> 0
+                piece.player == Player.PLAYER_1 && piece.type == PieceType.MAN -> 1
+                piece.player == Player.PLAYER_1 && piece.type == PieceType.KING -> 2
+                piece.player == Player.PLAYER_2 && piece.type == PieceType.MAN -> 3
+                else -> 4
+            }
+            hash = hash * 5 + pieceValue
         }
         hash = hash * 2 + (if (player == Player.PLAYER_1) 0 else 1)
         return hash
