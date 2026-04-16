@@ -1,17 +1,36 @@
 // File: app/src/main/java/com/lionico/draft/ui/screen/MainMenuScreen.kt
 package com.lionico.draft.ui.screen
 
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Computer
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -22,6 +41,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,147 +51,231 @@ import androidx.compose.ui.unit.sp
 import com.lionico.draft.R
 import com.lionico.draft.data.ai.Difficulty
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(
-    onPlayVsPlayer: () -> Unit,
-    onPlayVsComputer: (Difficulty) -> Unit,
+    onPlayVsFriendSameDevice: () -> Unit,
+    onPlayVsAI: (Difficulty) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showDifficultySelection by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var showAIDifficultySheet by remember { mutableStateOf(false) }
+    var showNetworkSheet by remember { mutableStateOf(false) }
     
-    Column(
+    val showComingSoonToast: () -> Unit = {
+        Toast.makeText(context, "Coming soon!", Toast.LENGTH_SHORT).show()
+    }
+    
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = stringResource(R.string.app_name),
-            fontSize = 36.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = stringResource(R.string.tagline),
-            fontSize = 16.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.height(48.dp))
-        
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(
+        // Header with stats
+        item {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = stringResource(R.string.play_vs_player),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium
+                    text = stringResource(R.string.app_name),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = stringResource(R.string.play_vs_player_desc),
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Button(
-                    onClick = onPlayVsPlayer,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.start_game))
-                }
-            }
-        }
-        
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(R.string.play_vs_computer),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = stringResource(R.string.play_vs_computer_desc),
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                if (showDifficultySelection) {
-                    DifficultySelector(
-                        onSelect = { difficulty ->
-                            onPlayVsComputer(difficulty)
-                        },
-                        onCancel = {
-                            showDifficultySelection = false
-                        }
+                Row {
+                    StatBadge(
+                        icon = Icons.Default.Person,
+                        count = "105.9K",
+                        label = "players"
                     )
-                } else {
-                    Button(
-                        onClick = { showDifficultySelection = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.choose_difficulty))
-                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    StatBadge(
+                        icon = Icons.Default.Group,
+                        count = "44.2K",
+                        label = "games"
+                    )
                 }
             }
         }
         
-        Spacer(modifier = Modifier.height(24.dp))
+        // Quick Play Section
+        item {
+            SectionHeader(title = stringResource(R.string.quick_play))
+        }
         
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+        item {
+            QuickPlayGrid(
+                onPlayVsFriendSameDevice = onPlayVsFriendSameDevice,
+                onPlayVsAI = { showAIDifficultySheet = true }
             )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
+        }
+        
+        // Play With Friend Section
+        item {
+            SectionHeader(title = stringResource(R.string.play_with_friend))
+        }
+        
+        item {
+            FriendOptionsCard(
+                onSameDevice = onPlayVsFriendSameDevice,
+                onBluetooth = showComingSoonToast,
+                onInternet = showComingSoonToast
+            )
+        }
+        
+        // Live Streams / Activity Section
+        item {
+            SectionHeader(title = stringResource(R.string.live_now))
+        }
+        
+        items(sampleStreams) { stream ->
+            StreamCard(stream, onClick = showComingSoonToast)
+        }
+        
+        // Create Game Button
+        item {
+            Button(
+                onClick = showComingSoonToast,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.quick_rules),
-                    fontSize = 14.sp,
+                    text = stringResource(R.string.create_game),
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
+            }
+        }
+    }
+    
+    // AI Difficulty Bottom Sheet
+    if (showAIDifficultySheet) {
+        AIDifficultySheet(
+            onSelect = { difficulty ->
+                showAIDifficultySheet = false
+                onPlayVsAI(difficulty)
+            },
+            onDismiss = { showAIDifficultySheet = false }
+        )
+    }
+}
+
+@Composable
+private fun StatBadge(
+    icon: ImageVector,
+    count: String,
+    label: String
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Column {
+            Text(
+                text = count,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(vertical = 4.dp)
+    )
+}
+
+@Composable
+private fun QuickPlayGrid(
+    onPlayVsFriendSameDevice: () -> Unit,
+    onPlayVsAI: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        QuickPlayCard(
+            title = stringResource(R.string.vs_friend),
+            subtitle = stringResource(R.string.same_device),
+            icon = Icons.Default.Group,
+            onClick = onPlayVsFriendSameDevice,
+            modifier = Modifier.weight(1f)
+        )
+        QuickPlayCard(
+            title = stringResource(R.string.vs_computer),
+            subtitle = stringResource(R.string.ai_battle),
+            icon = Icons.Default.Computer,
+            onClick = onPlayVsAI,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun QuickPlayCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .height(100.dp)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Column {
                 Text(
-                    text = stringResource(R.string.rules_text),
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = subtitle,
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 18.sp
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -177,49 +283,209 @@ fun MainMenuScreen(
 }
 
 @Composable
-private fun DifficultySelector(
-    onSelect: (Difficulty) -> Unit,
-    onCancel: () -> Unit
+private fun FriendOptionsCard(
+    onSameDevice: () -> Unit,
+    onBluetooth: () -> Unit,
+    onInternet: () -> Unit
 ) {
-    Column(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Button(
-            onClick = { onSelect(Difficulty.EASY) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
+            FriendOptionRow(
+                icon = Icons.Default.Person,
+                title = stringResource(R.string.same_device),
+                subtitle = stringResource(R.string.pass_and_play),
+                onClick = onSameDevice
             )
-        ) {
-            Text(stringResource(R.string.difficulty_easy))
-        }
-        
-        Button(
-            onClick = { onSelect(Difficulty.MEDIUM) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary
+            Divider(modifier = Modifier.padding(horizontal = 8.dp))
+            FriendOptionRow(
+                icon = Icons.Default.Bluetooth,
+                title = stringResource(R.string.bluetooth_hotspot),
+                subtitle = stringResource(R.string.play_nearby),
+                onClick = onBluetooth
             )
-        ) {
-            Text(stringResource(R.string.difficulty_medium))
-        }
-        
-        Button(
-            onClick = { onSelect(Difficulty.HARD) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary
+            Divider(modifier = Modifier.padding(horizontal = 8.dp))
+            FriendOptionRow(
+                icon = Icons.Default.Language,
+                title = stringResource(R.string.internet),
+                subtitle = stringResource(R.string.play_online),
+                onClick = onInternet
             )
-        ) {
-            Text(stringResource(R.string.difficulty_hard))
-        }
-        
-        OutlinedButton(
-            onClick = onCancel,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.cancel))
         }
     }
 }
+
+@Composable
+private fun FriendOptionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(28.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = subtitle,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun AIDifficultySheet(
+    onSelect: (Difficulty) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.select_ai_difficulty),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Button(
+                onClick = { onSelect(Difficulty.EASY) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50)
+                )
+            ) {
+                Text(stringResource(R.string.difficulty_easy), fontSize = 16.sp)
+            }
+            
+            Button(
+                onClick = { onSelect(Difficulty.MEDIUM) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFF9800)
+                )
+            ) {
+                Text(stringResource(R.string.difficulty_medium), fontSize = 16.sp)
+            }
+            
+            Button(
+                onClick = { onSelect(Difficulty.HARD) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFF44336)
+                )
+            ) {
+                Text(stringResource(R.string.difficulty_hard), fontSize = 16.sp)
+            }
+            
+            OutlinedButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    }
+}
+
+@Composable
+private fun StreamCard(stream: StreamData, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stream.initial,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stream.title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = stream.subtitle,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                text = "${stream.viewers} 👁",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+private data class StreamData(
+    val initial: String,
+    val title: String,
+    val subtitle: String,
+    val viewers: Int
+)
+
+private val sampleStreams = listOf(
+    StreamData("IM", "IM Stefanov", "Road to 3500 Puzzles", 1245),
+    StreamData("CM", "CM Morris", "Jährliche Schnellschach-Arena", 892),
+    StreamData("M", "blitzingmaria", "chill rapid & camomile tea", 567),
+    StreamData("GM", "GM Master", "African Draughts Tournament", 2341)
+)
