@@ -17,14 +17,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lionico.draft.data.engine.Board
-import com.lionico.draft.data.model.Piece
 import com.lionico.draft.data.model.Position
 import com.lionico.draft.ui.theme.DarkSquareColor
 import com.lionico.draft.ui.theme.LightSquareColor
 
-/**
- * Main board view that renders the 8x8 board and all pieces.
- */
 @Composable
 fun BoardView(
     board: Board,
@@ -38,10 +34,9 @@ fun BoardView(
             .aspectRatio(1f)
             .padding(8.dp)
     ) {
-        val squareSize = constraints.maxWidth / 8
+        val squareSize = constraints.maxWidth / 8f
         val squareSizeDp = with(LocalDensity.current) { squareSize.toDp() }
         
-        // Draw the board squares
         Canvas(modifier = Modifier.fillMaxSize()) {
             for (row in 0..7) {
                 for (col in 0..7) {
@@ -56,10 +51,9 @@ fun BoardView(
                 }
             }
             
-            // Highlight selected square
             selectedPosition?.let { pos ->
-                val row = pos.row()
-                val col = pos.col()
+                val row = pos.row().toFloat()
+                val col = pos.col().toFloat()
                 drawRect(
                     color = Color.Yellow.copy(alpha = 0.3f),
                     topLeft = Offset(col * squareSize, row * squareSize),
@@ -68,11 +62,9 @@ fun BoardView(
             }
         }
         
-        // Draw pieces on top of the board
         Box(modifier = Modifier.fillMaxSize()) {
             for (row in 0..7) {
                 for (col in 0..7) {
-                    // Only dark squares contain pieces
                     if ((row + col) % 2 != 0) {
                         val position = Position.fromRowCol(row, col)
                         if (position != null) {
@@ -86,20 +78,19 @@ fun BoardView(
                                     isSelected = isSelected,
                                     modifier = Modifier
                                         .offset(
-                                            x = (col * squareSize).toDp(),
-                                            y = (row * squareSize).toDp()
+                                            x = (col * squareSizeDp.value).dp,
+                                            y = (row * squareSizeDp.value).dp
                                         )
                                         .size(squareSizeDp),
                                     onClick = { onSquareClick(position) }
                                 )
                             } else if (isValidMove) {
-                                // Show valid move indicator on empty square
                                 EmptySquareView(
                                     isValidMove = true,
                                     modifier = Modifier
                                         .offset(
-                                            x = (col * squareSize).toDp(),
-                                            y = (row * squareSize).toDp()
+                                            x = (col * squareSizeDp.value).dp,
+                                            y = (row * squareSizeDp.value).dp
                                         )
                                         .size(squareSizeDp),
                                     onClick = { onSquareClick(position) }
@@ -111,12 +102,4 @@ fun BoardView(
             }
         }
     }
-}
-
-/**
- * Helper extension to convert pixel value to Dp.
- */
-@Composable
-private fun Float.toDp(): Dp {
-    return with(LocalDensity.current) { this@toDp.toDp() }
 }
