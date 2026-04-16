@@ -6,16 +6,16 @@ kotlin = "1.9.22"
 coreKtx = "1.12.0"
 lifecycleRuntimeKtx = "2.7.0"
 activityCompose = "1.8.2"
-composeBom = "2024.02.01"  # Updated from 2023.08.00
+composeBom = "2024.02.01"
 junit = "4.13.2"
 androidxJunit = "1.1.5"
 androidxEspresso = "3.5.1"
 googleAds = "23.0.0"
-material3 = "1.2.1"  # Updated from 1.1.2 (compatible with BOM 2024.02.01)
-materialIconsExtended = "1.6.7"  # Updated from 1.5.4
+material3 = "1.2.1"
+materialIconsExtended = "1.6.7"
 kotlinxSerializationJson = "1.6.0"
+navigationCompose = "2.7.7"
 
-# ADDED: Missing dependencies
 hilt = "2.50"
 ksp = "1.9.22-1.0.16"
 room = "2.6.1"
@@ -35,6 +35,9 @@ androidx-compose-material3 = { module = "androidx.compose.material3:material3", 
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
+
+# Navigation
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 
 # JSON Serialization
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
