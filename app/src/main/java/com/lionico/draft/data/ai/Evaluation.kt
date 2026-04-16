@@ -13,16 +13,11 @@ import com.lionico.draft.data.model.Position
  */
 object Evaluation {
     
-    // Piece values
     private const val MAN_VALUE = 100
     private const val KING_VALUE = 175
-    
-    // Positional bonuses
     private const val CENTER_BONUS = 10
     private const val EDGE_PENALTY = -5
     private const val BACK_ROW_BONUS = 8
-    
-    // Mobility bonus (per available move)
     private const val MOBILITY_BONUS = 5
     
     /**
@@ -31,16 +26,9 @@ object Evaluation {
      */
     fun evaluate(board: Board, player: Player): Int {
         var score = 0
-        
-        // Material evaluation
         score += evaluateMaterial(board, player)
-        
-        // Positional evaluation
         score += evaluatePosition(board, player)
-        
-        // Mobility evaluation
         score += evaluateMobility(board, player)
-        
         return score
     }
     
@@ -50,8 +38,7 @@ object Evaluation {
     private fun evaluateMaterial(board: Board, player: Player): Int {
         var score = 0
         
-        for (index in 0..31) {
-            val position = Position(index)
+        for (position in Position.PLAYABLE_SQUARES) {
             val piece = board.getPieceAt(position) ?: continue
             
             val pieceValue = if (piece.type == PieceType.MAN) MAN_VALUE else KING_VALUE
@@ -72,13 +59,12 @@ object Evaluation {
     private fun evaluatePosition(board: Board, player: Player): Int {
         var score = 0
         
-        for (index in 0..31) {
-            val position = Position(index)
+        for (position in Position.PLAYABLE_SQUARES) {
             val piece = board.getPieceAt(position) ?: continue
             
             val multiplier = if (piece.player == player) 1 else -1
-            val row = position.row()
-            val col = position.col()
+            val row = position.row
+            val col = position.col
             
             // Center control (columns 2-5, rows 2-5)
             if (row in 2..5 && col in 2..5) {
@@ -90,11 +76,11 @@ object Evaluation {
                 score += EDGE_PENALTY * multiplier
             }
             
-            // Back row bonus for men (safe from capture)
+            // Back row bonus for men
             if (piece.type == PieceType.MAN) {
                 val isBackRow = when (piece.player) {
-                    Player.PLAYER_1 -> row == 7  // Bottom row for player 1
-                    Player.PLAYER_2 -> row == 0  // Top row for player 2
+                    Player.PLAYER_1 -> row == 7
+                    Player.PLAYER_2 -> row == 0
                 }
                 if (isBackRow) {
                     score += BACK_ROW_BONUS * multiplier
@@ -107,34 +93,18 @@ object Evaluation {
     
     /**
      * Evaluates mobility (number of available moves).
-     * More available moves = better position.
      */
     private fun evaluateMobility(board: Board, player: Player): Int {
         val validator = MoveValidator(board)
-        
         val playerMoves = validator.getValidMoves(player).size
         val opponentMoves = validator.getValidMoves(player.opponent()).size
-        
         return (playerMoves - opponentMoves) * MOBILITY_BONUS
     }
     
     /**
      * Quick evaluation for endgame situations.
-     * Used when time is limited or for shallow searches.
      */
     fun quickEvaluate(board: Board, player: Player): Int {
-        var score = 0
-        
-        for (index in 0..31) {
-            val position = Position(index)
-            val piece = board.getPieceAt(position) ?: continue
-            
-            val pieceValue = if (piece.type == PieceType.MAN) MAN_VALUE else KING_VALUE
-            val multiplier = if (piece.player == player) 1 else -1
-            
-            score += pieceValue * multiplier
-        }
-        
-        return score
+        return evaluateMaterial(board, player)
     }
 }
