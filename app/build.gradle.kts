@@ -5,8 +5,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
-    // Optional: Kotlin Serialization for JSON handling
-    // alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -55,7 +53,6 @@ android {
     }
 
     composeOptions {
-        // Updated for Compose BOM 2024.02.01 compatibility
         kotlinCompilerExtensionVersion = "1.5.10"
     }
 
@@ -71,7 +68,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    // Splash Screen API (CRITICAL for Android 12+ splash screens)
     implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Compose
@@ -79,34 +75,18 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3) // Material 3 colors for Compose
+    implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
-
-    // Material Theme Adapter (REQUIRED for XML themes to use Material 3)
-    // implementation("com.google.accompanist:accompanist-themeadapter-material3:0.31.0")
-
-    // Optional Advanced Compose / Material stuff
     implementation(libs.androidx.compose.material.icons.extended)
 
-    // Optional JSON serialization
-    // implementation(libs.kotlinx.serialization.json)
-
-    // Optional Ads
-    // implementation(libs.google.ads)
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
 
     // Hilt DI
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
-
-    // Room database
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
-    // WorkManager
-    implementation(libs.androidx.work.runtime.ktx)
 
     // Testing
     testImplementation(libs.junit)
