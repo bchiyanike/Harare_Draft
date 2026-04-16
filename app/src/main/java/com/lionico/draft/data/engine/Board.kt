@@ -1,3 +1,4 @@
+
 // File: app/src/main/java/com/lionico/draft/data/engine/Board.kt
 package com.lionico.draft.data.engine
 
@@ -7,84 +8,66 @@ import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.Position
 
 /**
- * Core board representation using a 32-element IntArray for efficiency.
+ * Core board representation using an 8×8 matrix.
+ * Only dark squares (where row + col is odd) contain pieces.
+ * Light squares are always null.
  * 
- * Square values:
- * 0 = empty
- * 1 = PLAYER_1 man
- * 2 = PLAYER_1 king
- * 3 = PLAYER_2 man
- * 4 = PLAYER_2 king
+ * Row 0 = top of board (Player 2's home)
+ * Row 7 = bottom of board (Player 1's home)
  */
 class Board {
     
-    // 32 playable dark squares
-    val squares = IntArray(32) { INITIAL_SETUP[it] }
-    
-    /**
-     * Gets the piece at the given position.
-     * Returns null if the square is empty.
-     */
-    fun getPieceAt(position: Position): Piece? {
-        return when (val value = squares[position.index]) {
-            1 -> Piece(Player.PLAYER_1, PieceType.MAN)
-            2 -> Piece(Player.PLAYER_1, PieceType.KING)
-            3 -> Piece(Player.PLAYER_2, PieceType.MAN)
-            4 -> Piece(Player.PLAYER_2, PieceType.KING)
-            else -> null
+    // 8×8 matrix - null means empty or light square
+    private val squares = Array(8) { row ->
+        Array<Piece?>(8) { col ->
+            INITIAL_SETUP[row][col]
         }
     }
     
     /**
+     * Gets the piece at the given position.
+     * Returns null if empty or light square.
+     */
+    fun getPieceAt(position: Position): Piece? {
+        return squares[position.row][position.col]
+    }
+    
+    /**
      * Places a piece at the given position.
-     * Pass null to clear the square.
+     * Throws if attempting to place on a light square.
      */
     fun setPieceAt(position: Position, piece: Piece?) {
-        squares[position.index] = when (piece?.player) {
-            Player.PLAYER_1 -> if (piece.type == PieceType.MAN) 1 else 2
-            Player.PLAYER_2 -> if (piece.type == PieceType.MAN) 3 else 4
-            null -> 0
-        }
+        require(position.isPlayable) { "Cannot place piece on light square: $position" }
+        squares[position.row][position.col] = piece
     }
     
     /**
      * Checks if the given position is empty.
      */
-    fun isEmpty(position: Position): Boolean = squares[position.index] == 0
+    fun isEmpty(position: Position): Boolean {
+        return squares[position.row][position.col] == null
+    }
     
     /**
      * Checks if the piece at the given position belongs to the specified player.
      */
     fun isPlayerPiece(position: Position, player: Player): Boolean {
-        val value = squares[position.index]
-        return when (player) {
-            Player.PLAYER_1 -> value == 1 || value == 2
-            Player.PLAYER_2 -> value == 3 || value == 4
-        }
+        val piece = squares[position.row][position.col] ?: return false
+        return piece.player == player
     }
     
     /**
      * Counts the number of pieces a player has on the board.
      */
     fun countPieces(player: Player): Int {
-        return squares.count { value ->
-            when (player) {
-                Player.PLAYER_1 -> value == 1 || value == 2
-                Player.PLAYER_2 -> value == 3 || value == 4
+        var count = 0
+        for (row in 0..7) {
+            for (col in 0..7) {
+                val piece = squares[row][col]
+                if (piece?.player == player) count++
             }
         }
-    }
-    
-    /**
-     * Counts the number of kings a player has on the board.
-     */
-    fun countKings(player: Player): Int {
-        return squares.count { value ->
-            when (player) {
-                Player.PLAYER_1 -> value == 2
-                Player.PLAYER_2 -> value == 4
-            }
-        }
+        return count
     }
     
     /**
@@ -92,14 +75,14 @@ class Board {
      */
     fun getPlayerPositions(player: Player): List<Position> {
         val positions = mutableListOf<Position>()
-        for (index in 0..31) {
-            val value = squares[index]
-            val isPlayerPiece = when (player) {
-                Player.PLAYER_1 -> value == 1 || value == 2
-                Player.PLAYER_2 -> value == 3 || value == 4
-            }
-            if (isPlayerPiece) {
-                positions.add(Position(index))
+        for (row in 0..7) {
+            for (col in 0..7) {
+                if ((row + col) % 2 != 0) {
+                    val piece = squares[row][col]
+                    if (piece?.player == player) {
+                        positions.add(Position(row, col))
+                    }
+                }
             }
         }
         return positions
@@ -110,7 +93,11 @@ class Board {
      */
     fun copy(): Board {
         val newBoard = Board()
-        squares.copyInto(newBoard.squares)
+        for (row in 0..7) {
+            for (col in 0..7) {
+                newBoard.squares[row][col] = this.squares[row][col]
+            }
+        }
         return newBoard
     }
     
@@ -118,32 +105,28 @@ class Board {
      * Resets the board to the starting position.
      */
     fun reset() {
-        INITIAL_SETUP.copyInto(squares)
+        for (row in 0..7) {
+            for (col in 0..7) {
+                squares[row][col] = INITIAL_SETUP[row][col]
+            }
+        }
     }
     
     companion object {
         /**
          * Starting positions for African Draughts.
          * PLAYER_1 (bottom) on rows 5-7, PLAYER_2 (top) on rows 0-2.
-         * 
-         * Row 0 (top):    PLAYER_2 men (value 3)
-         * Row 1:          PLAYER_2 men (value 3)
-         * Row 2:          PLAYER_2 men (value 3)
-         * Row 3:          Empty (value 0)
-         * Row 4:          Empty (value 0)
-         * Row 5:          PLAYER_1 men (value 1)
-         * Row 6:          PLAYER_1 men (value 1)
-         * Row 7 (bottom): PLAYER_1 men (value 1)
+         * Light squares (row + col even) are always null.
          */
-        val INITIAL_SETUP = intArrayOf(
-            3, 3, 3, 3,    // Row 0
-            3, 3, 3, 3,    // Row 1
-            3, 3, 3, 3,    // Row 2
-            0, 0, 0, 0,    // Row 3
-            0, 0, 0, 0,    // Row 4
-            1, 1, 1, 1,    // Row 5
-            1, 1, 1, 1,    // Row 6
-            1, 1, 1, 1     // Row 7
-        )
+        private val INITIAL_SETUP: Array<Array<Piece?>> = Array(8) { row ->
+            Array(8) { col ->
+                when {
+                    (row + col) % 2 == 0 -> null  // Light square
+                    row in 0..2 -> Piece(Player.PLAYER_2, PieceType.MAN)
+                    row in 5..7 -> Piece(Player.PLAYER_1, PieceType.MAN)
+                    else -> null
+                }
+            }
+        }
     }
 }
