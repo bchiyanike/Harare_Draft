@@ -2,61 +2,80 @@
 package com.lionico.draft.data.model
 
 /**
- * Represents a position on the 8x8 board using only the 32 dark squares.
- * Index values range from 0 to 31, mapping to playable dark squares only.
+ * Represents a position on the 8×8 board using row and column coordinates.
+ * Only dark squares (where row + col is odd) are playable.
  * 
- * Board layout (dark squares only, numbered 0-31):
- * 
- * Row 0 (top):    0   1   2   3
- * Row 1:          4   5   6   7
- * Row 2:          8   9  10  11
- * Row 3:         12  13  14  15
- * Row 4:         16  17  18  19
- * Row 5:         20  21  22  23
- * Row 6:         24  25  26  27
- * Row 7 (bottom):28  29  30  31
+ * Row 0 = top of board (Player 2's home)
+ * Row 7 = bottom of board (Player 1's home)
+ * Column 0 = left edge, Column 7 = right edge
  */
 data class Position(
-    val index: Int  // 0-31 representing dark squares only
+    val row: Int,
+    val col: Int
 ) {
     init {
-        require(index in 0..31) { "Position index must be between 0 and 31" }
+        require(row in 0..7) { "Row must be between 0 and 7" }
+        require(col in 0..7) { "Column must be between 0 and 7" }
     }
     
     /**
-     * Returns the board row (0-7) for this position.
+     * Whether this position is a playable dark square.
      */
-    fun row(): Int = index / 4
+    val isPlayable: Boolean
+        get() = (row + col) % 2 != 0
     
     /**
-     * Returns the board column (0-7) for this position.
+     * Returns the position one step in the given direction, or null if off-board.
      */
-    fun col(): Int {
-        val r = row()
-        val offset = index % 4
-        // Dark squares are offset based on row parity
-        return if (r % 2 == 0) offset * 2 + 1 else offset * 2
+    fun step(dr: Int, dc: Int): Position? {
+        val newRow = row + dr
+        val newCol = col + dc
+        return if (newRow in 0..7 && newCol in 0..7) {
+            Position(newRow, newCol)
+        } else {
+            null
+        }
+    }
+    
+    /**
+     * Returns the position two steps in the given direction, or null if off-board.
+     * Used for capture landing squares.
+     */
+    fun jump(dr: Int, dc: Int): Position? {
+        val newRow = row + dr * 2
+        val newCol = col + dc * 2
+        return if (newRow in 0..7 && newCol in 0..7) {
+            Position(newRow, newCol)
+        } else {
+            null
+        }
+    }
+    
+    /**
+     * Returns the position halfway between this and target.
+     * Used to find the captured piece.
+     */
+    fun midpoint(target: Position): Position {
+        return Position(
+            row = (row + target.row) / 2,
+            col = (col + target.col) / 2
+        )
     }
     
     companion object {
         /**
-         * Creates a Position from row and column coordinates.
-         * Returns null if the square is not a dark square.
+         * All 32 playable dark squares in row-major order.
          */
-        fun fromRowCol(row: Int, col: Int): Position? {
-            if (row !in 0..7 || col !in 0..7) return null
-            if ((row + col) % 2 == 0) return null // Light square - not playable
-            
-            val baseIndex = row * 4
-            val offset = if (row % 2 == 0) (col - 1) / 2 else col / 2
-            return Position(baseIndex + offset)
-        }
-        
-        /**
-         * Checks if the given row and column represent a valid dark square.
-         */
-        fun isValid(row: Int, col: Int): Boolean {
-            return row in 0..7 && col in 0..7 && (row + col) % 2 != 0
+        val PLAYABLE_SQUARES: List<Position> = run {
+            val squares = mutableListOf<Position>()
+            for (row in 0..7) {
+                for (col in 0..7) {
+                    if ((row + col) % 2 != 0) {
+                        squares.add(Position(row, col))
+                    }
+                }
+            }
+            squares
         }
     }
 }
