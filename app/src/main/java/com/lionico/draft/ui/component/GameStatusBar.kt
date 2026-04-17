@@ -34,6 +34,8 @@ fun GameStatusBar(
     currentPlayer: Player,
     player1Pieces: Int,
     player2Pieces: Int,
+    player1Name: String,
+    player2Name: String,
     isAIThinking: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -54,7 +56,7 @@ fun GameStatusBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             PlayerInfo(
-                playerName = stringResource(R.string.player_1_short),
+                playerName = player1Name,
                 pieceCount = player1Pieces,
                 pieceColor = Player1PieceColor,
                 isActive = currentPlayer == Player.PLAYER_1
@@ -66,7 +68,7 @@ fun GameStatusBar(
             )
 
             PlayerInfo(
-                playerName = stringResource(R.string.player_2_short),
+                playerName = player2Name,
                 pieceCount = player2Pieces,
                 pieceColor = Player2PieceColor,
                 isActive = currentPlayer == Player.PLAYER_2
@@ -114,7 +116,8 @@ private fun PlayerInfo(
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
-                }
+                },
+                maxLines = 1
             )
         }
         
