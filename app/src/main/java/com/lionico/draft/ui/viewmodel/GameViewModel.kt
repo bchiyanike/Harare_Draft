@@ -4,17 +4,23 @@ package com.lionico.draft.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lionico.draft.data.ai.Difficulty
+import com.lionico.draft.data.datastore.PlayerPreferences
 import com.lionico.draft.data.engine.Board
 import com.lionico.draft.data.engine.GameEngine
+import com.lionico.draft.data.model.GameClock
+import com.lionico.draft.data.model.GameResult
 import com.lionico.draft.data.model.GameStatus
 import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.Position
+import com.lionico.draft.data.repository.GameHistoryRepository
 import com.lionico.draft.domain.usecase.CheckGameOverUseCase
 import com.lionico.draft.domain.usecase.ExecuteMoveUseCase
 import com.lionico.draft.domain.usecase.GetAIMoveUseCase
 import com.lionico.draft.domain.usecase.ValidateMoveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +38,9 @@ class GameViewModel @Inject constructor(
     private val validateMoveUseCase: ValidateMoveUseCase,
     private val executeMoveUseCase: ExecuteMoveUseCase,
     private val checkGameOverUseCase: CheckGameOverUseCase,
-    private val getAIMoveUseCase: GetAIMoveUseCase
+    private val getAIMoveUseCase: GetAIMoveUseCase,
+    private val playerPreferences: PlayerPreferences,
+    private val historyRepository: GameHistoryRepository
 ) : ViewModel() {
 
     private val _boardState = MutableStateFlow(gameEngine.getBoard())
@@ -50,21 +58,51 @@ class GameViewModel @Inject constructor(
     private val _validMoves = MutableStateFlow<List<Move>>(emptyList())
     val validMoves: StateFlow<List<Move>> = _validMoves.asStateFlow()
 
-    private val _validMovePositions = MutableStateFlow<Set<Position>>(emptySet())
-    val validMovePositions: StateFlow<Set<Position>> = _validMovePositions.asStateFlow()
-
     private val _isAIThinking = MutableStateFlow(false)
     val isAIThinking: StateFlow<Boolean> = _isAIThinking.asStateFlow()
 
     private val _winner = MutableStateFlow<Player?>(null)
     val winner: StateFlow<Player?> = _winner.asStateFlow()
 
+    private val _player1Name = MutableStateFlow("Player 1")
+    val player1Name: StateFlow<String> = _player1Name.asStateFlow()
+
+    private val _player2Name = MutableStateFlow("Player 2")
+    val player2Name: StateFlow<String> = _player2Name.asStateFlow()
+
     private var gameMode = GameMode.PLAYER_VS_PLAYER
     private var aiDifficulty = Difficulty.MEDIUM
+    private var gameStartTime = 0L
+
+    private val gameClock = GameClock()
+    val clockState = gameClock.state
+    private var clockTickJob: Job? = null
+
+    init {
+        loadPlayerNames()
+    }
+
+    private fun loadPlayerNames() {
+        viewModelScope.launch {
+            playerPreferences.playerNames.collect { names ->
+                _player1Name.value = names.player1Name
+                _player2Name.value = names.player2Name
+            }
+        }
+    }
 
     fun setGameMode(mode: GameMode, difficulty: Difficulty = Difficulty.MEDIUM) {
         this.gameMode = mode
         this.aiDifficulty = difficulty
+        
+        if (mode == GameMode.PLAYER_VS_COMPUTER) {
+            viewModelScope.launch {
+                val aiName = PlayerPreferences.randomAIName()
+                _player2Name.value = aiName
+                playerPreferences.setPlayer2Name(aiName)
+            }
+        }
+        
         resetGame()
     }
 
@@ -96,15 +134,13 @@ class GameViewModel @Inject constructor(
         val piece = _boardState.value.getPieceAt(position)
         if (piece?.player == _currentPlayer.value) {
             _selectedPosition.value = position
-            val moves = validateMoveUseCase(position)
-            _validMoves.value = moves
-            _validMovePositions.value = moves.map { it.to }.toSet()
+            _validMoves.value = validateMoveUseCase(position)
         }
     }
 
     private fun tryMove(from: Position, to: Position) {
         val move = _validMoves.value.find { it.from == from && it.to == to }
-        
+
         if (move != null) {
             executeMove(move)
         } else {
@@ -122,12 +158,16 @@ class GameViewModel @Inject constructor(
         if (success) {
             updateUIState()
             clearSelection()
+            
+            gameClock.switchTo(_currentPlayer.value)
 
             if (gameMode == GameMode.PLAYER_VS_COMPUTER &&
                 _currentPlayer.value == Player.PLAYER_2 &&
                 _gameStatus.value == GameStatus.ONGOING) {
                 makeAIMove()
             }
+            
+            checkAndHandleGameOver()
         }
     }
 
@@ -137,10 +177,13 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             _isAIThinking.value = true
             try {
+                delay(300)
                 val move = getAIMoveUseCase(aiDifficulty)
                 if (move != Move.NONE) {
                     executeMoveUseCase(move)
                     updateUIState()
+                    gameClock.switchTo(_currentPlayer.value)
+                    checkAndHandleGameOver()
                 }
             } finally {
                 _isAIThinking.value = false
@@ -158,29 +201,100 @@ class GameViewModel @Inject constructor(
     private fun clearSelection() {
         _selectedPosition.value = null
         _validMoves.value = emptyList()
-        _validMovePositions.value = emptySet()
+    }
+
+    private fun checkAndHandleGameOver() {
+        if (_gameStatus.value != GameStatus.ONGOING) {
+            gameClock.pause()
+            clockTickJob?.cancel()
+            saveGameResult()
+        }
+    }
+
+    private fun saveGameResult() {
+        viewModelScope.launch {
+            val winnerName = when (_gameStatus.value) {
+                GameStatus.PLAYER_1_WINS -> _player1Name.value
+                GameStatus.PLAYER_2_WINS -> _player2Name.value
+                else -> "Draw"
+            }
+            
+            val duration = ((System.currentTimeMillis() - gameStartTime) / 1000).toInt()
+            
+            val result = GameResult(
+                player1Name = _player1Name.value,
+                player2Name = _player2Name.value,
+                winner = winnerName,
+                gameMode = gameMode.name,
+                durationSeconds = duration,
+                player1PiecesRemaining = gameEngine.getPieceCounts().first,
+                player2PiecesRemaining = gameEngine.getPieceCounts().second
+            )
+            
+            historyRepository.saveResult(result)
+        }
+    }
+
+    private fun startClock() {
+        clockTickJob?.cancel()
+        clockTickJob = viewModelScope.launch {
+            while (true) {
+                delay(1000)
+                gameClock.tick()
+                gameClock.isTimeOut()?.let { player ->
+                    handleTimeOut(player)
+                }
+            }
+        }
+    }
+
+    private fun handleTimeOut(player: Player) {
+        gameClock.pause()
+        clockTickJob?.cancel()
+        
+        _gameStatus.value = if (player == Player.PLAYER_1) {
+            GameStatus.PLAYER_2_WINS
+        } else {
+            GameStatus.PLAYER_1_WINS
+        }
+        _winner.value = if (player == Player.PLAYER_1) Player.PLAYER_2 else Player.PLAYER_1
+        
+        saveGameResult()
     }
 
     fun resetGame() {
         gameEngine.newGame()
+        gameClock.reset()
+        gameStartTime = System.currentTimeMillis()
+        startClock()
+        gameClock.start(Player.PLAYER_1)
         updateUIState()
         clearSelection()
         _isAIThinking.value = false
     }
 
+    fun formatTime(seconds: Int): String = gameClock.formatTime(seconds)
+
     fun getStatusMessage(): String {
         return when (_gameStatus.value) {
             GameStatus.ONGOING -> {
-                val playerText = if (_currentPlayer.value == Player.PLAYER_1) "Player 1" else "Player 2"
-                "$playerText's Turn"
+                val playerName = if (_currentPlayer.value == Player.PLAYER_1) {
+                    _player1Name.value
+                } else {
+                    _player2Name.value
+                }
+                "$playerName's Turn"
             }
-            GameStatus.PLAYER_1_WINS -> "Player 1 Wins!"
-            GameStatus.PLAYER_2_WINS -> "Player 2 Wins!"
+            GameStatus.PLAYER_1_WINS -> "${_player1Name.value} Wins!"
+            GameStatus.PLAYER_2_WINS -> "${_player2Name.value} Wins!"
             GameStatus.DRAW -> "Draw!"
         }
     }
 
-    fun getPieceCounts(): Pair<Int, Int> {
-        return gameEngine.getPieceCounts()
+    fun getPieceCounts(): Pair<Int, Int> = gameEngine.getPieceCounts()
+    
+    override fun onCleared() {
+        super.onCleared()
+        clockTickJob?.cancel()
     }
 }
