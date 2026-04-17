@@ -25,6 +25,8 @@ fun ClockView(
     player1Time: String,
     player2Time: String,
     activePlayer: Player?,
+    player1Name: String,
+    player2Name: String,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -43,7 +45,7 @@ fun ClockView(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             ClockDisplay(
-                label = "P1",
+                label = player1Name,
                 time = player1Time,
                 isActive = activePlayer == Player.PLAYER_1
             )
@@ -53,7 +55,7 @@ fun ClockView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             ClockDisplay(
-                label = "P2",
+                label = player2Name,
                 time = player2Time,
                 isActive = activePlayer == Player.PLAYER_2
             )
@@ -71,7 +73,8 @@ private fun ClockDisplay(
         Text(
             text = label,
             fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
         )
         Text(
             text = time,
