@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.lionico.draft.data.engine.Board
+import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.Position
 import com.lionico.draft.ui.theme.DarkSquareColor
 import com.lionico.draft.ui.theme.LightSquareColor
@@ -24,10 +25,15 @@ import com.lionico.draft.ui.theme.LightSquareColor
 fun BoardView(
     board: Board,
     selectedPosition: Position?,
-    validMovePositions: Set<Position>,
+    validMoves: List<Move>,
     onSquareClick: (Position) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val validMovePositions = validMoves.map { it.to }.toSet()
+    val capturePathPositions = validMoves.flatMap { move ->
+        move.capturedPositions
+    }.toSet()
+    
     BoxWithConstraints(
         modifier = modifier
             .aspectRatio(1f)
@@ -66,6 +72,7 @@ fun BoardView(
                         val position = Position(row, col)
                         val piece = board.getPieceAt(position)
                         val isValidMove = validMovePositions.contains(position)
+                        val isCapturePath = capturePathPositions.contains(position)
                         val isSelected = selectedPosition == position
                         
                         if (piece != null) {
@@ -83,6 +90,19 @@ fun BoardView(
                         } else if (isValidMove) {
                             EmptySquareView(
                                 isValidMove = true,
+                                isCapturePath = false,
+                                modifier = Modifier
+                                    .offset(
+                                        x = (col * squareSizeDp.value).dp,
+                                        y = (row * squareSizeDp.value).dp
+                                    )
+                                    .size(squareSizeDp),
+                                onClick = { onSquareClick(position) }
+                            )
+                        } else if (isCapturePath) {
+                            EmptySquareView(
+                                isValidMove = false,
+                                isCapturePath = true,
                                 modifier = Modifier
                                     .offset(
                                         x = (col * squareSizeDp.value).dp,
