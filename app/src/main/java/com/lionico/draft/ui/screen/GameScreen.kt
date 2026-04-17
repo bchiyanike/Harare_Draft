@@ -24,6 +24,7 @@ import com.lionico.draft.R
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.model.GameStatus
 import com.lionico.draft.ui.component.BoardView
+import com.lionico.draft.ui.component.ClockView
 import com.lionico.draft.ui.component.GameControls
 import com.lionico.draft.ui.component.GameStatusBar
 import com.lionico.draft.ui.viewmodel.GameMode
@@ -42,8 +43,11 @@ fun GameScreen(
     val gameStatus by viewModel.gameStatus.collectAsState()
     val winner by viewModel.winner.collectAsState()
     val selectedPosition by viewModel.selectedPosition.collectAsState()
-    val validMovePositions by viewModel.validMovePositions.collectAsState()
+    val validMoves by viewModel.validMoves.collectAsState()
     val isAIThinking by viewModel.isAIThinking.collectAsState()
+    val clockState by viewModel.clockState.collectAsState()
+    val player1Name by viewModel.player1Name.collectAsState()
+    val player2Name by viewModel.player2Name.collectAsState()
     val pieceCounts = viewModel.getPieceCounts()
     
     LaunchedEffect(gameMode, difficulty) {
@@ -75,18 +79,29 @@ fun GameScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            ClockView(
+                player1Time = viewModel.formatTime(clockState.player1TimeSeconds),
+                player2Time = viewModel.formatTime(clockState.player2TimeSeconds),
+                activePlayer = clockState.activePlayer,
+                player1Name = player1Name,
+                player2Name = player2Name,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            
             GameStatusBar(
                 currentPlayer = currentPlayer,
                 player1Pieces = pieceCounts.first,
                 player2Pieces = pieceCounts.second,
+                player1Name = player1Name,
+                player2Name = player2Name,
                 isAIThinking = isAIThinking,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 4.dp)
             )
             
             BoardView(
                 board = boardState,
                 selectedPosition = selectedPosition,
-                validMovePositions = validMovePositions,
+                validMoves = validMoves,
                 onSquareClick = viewModel::onSquareClick,
                 modifier = Modifier
                     .weight(1f)
@@ -104,6 +119,8 @@ fun GameScreen(
             GameOverDialog(
                 gameStatus = gameStatus,
                 winner = winner,
+                player1Name = player1Name,
+                player2Name = player2Name,
                 onNewGame = { viewModel.resetGame() },
                 onMainMenu = onNavigateBack
             )
