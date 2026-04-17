@@ -37,14 +37,13 @@ fun PieceView(
         Player.PLAYER_1 -> Player1PieceColor
         Player.PLAYER_2 -> Player2PieceColor
     }
-    
-    // Animate selection scale
+
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.1f else 1f,
         animationSpec = tween(durationMillis = 200),
         label = "piece_scale"
     )
-    
+
     Box(
         modifier = modifier
             .scale(scale)
@@ -54,22 +53,19 @@ fun PieceView(
         Canvas(modifier = Modifier.size(40.dp)) {
             val center = Offset(size.width / 2, size.height / 2)
             val radius = size.width / 2 - 4.dp.toPx()
-            
-            // Draw piece shadow
+
             drawCircle(
                 color = Color.Black.copy(alpha = 0.3f),
                 radius = radius,
                 center = center.copy(y = center.y + 2.dp.toPx())
             )
-            
-            // Draw main piece
+
             drawCircle(
                 color = pieceColor,
                 radius = radius,
                 center = center
             )
-            
-            // Draw highlight (3D effect)
+
             drawCircle(
                 color = Color.White.copy(alpha = 0.3f),
                 radius = radius * 0.7f,
@@ -78,16 +74,14 @@ fun PieceView(
                     y = center.y - radius * 0.2f
                 )
             )
-            
-            // Draw border
+
             drawCircle(
                 color = Color.Black.copy(alpha = 0.5f),
                 radius = radius,
                 center = center,
                 style = Stroke(width = 1.5.dp.toPx())
             )
-            
-            // Draw selection indicator
+
             if (isSelected) {
                 drawCircle(
                     color = SelectedPieceBorder,
@@ -96,8 +90,7 @@ fun PieceView(
                     style = Stroke(width = 3.dp.toPx())
                 )
             }
-            
-            // Draw king crown
+
             if (piece.type == PieceType.KING) {
                 drawKingCrown(center, radius)
             }
@@ -114,15 +107,13 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawKingCrown(
 ) {
     val crownRadius = pieceRadius * 0.35f
     val crownY = center.y - pieceRadius * 0.2f
-    
-    // Crown base
+
     drawCircle(
         color = Color.Yellow,
         radius = crownRadius,
         center = Offset(center.x, crownY)
     )
-    
-    // Crown points
+
     val pointOffset = crownRadius * 0.6f
     drawCircle(
         color = Color.Yellow,
@@ -139,8 +130,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawKingCrown(
         radius = crownRadius * 0.5f,
         center = Offset(center.x, crownY - pointOffset)
     )
-    
-    // Crown border
+
     drawCircle(
         color = Color.Black.copy(alpha = 0.5f),
         radius = crownRadius,
@@ -150,37 +140,14 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawKingCrown(
 }
 
 /**
- * Preview piece (empty square placeholder).
+ * Empty square with move indicators.
+ * @param isValidMove Highlights as final landing square (green)
+ * @param isCapturePath Highlights as intermediate capture path (yellow)
  */
 @Composable
 fun EmptySquareView(
     isValidMove: Boolean = false,
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
-) {
-    Box(
-        modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke() },
-        contentAlignment = Alignment.Center
-    ) {
-        if (isValidMove) {
-            Canvas(modifier = Modifier.size(40.dp)) {
-                drawCircle(
-                    color = Color.Green.copy(alpha = 0.4f),
-                    radius = size.width / 3,
-                    center = Offset(size.width / 2, size.height / 2)
-                )
-            }
-        }
-    }
-}
-
-// File: app/src/main/java/com/lionico/draft/ui/component/PieceView.kt
-// Add this function if not present, or update existing
-
-@Composable
-fun EmptySquareView(
-    isValidMove: Boolean,
-    isCapturePath: Boolean,
+    isCapturePath: Boolean = false,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
@@ -207,4 +174,4 @@ fun EmptySquareView(
             }
         }
     }
-} 
+}
