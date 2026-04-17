@@ -40,24 +40,35 @@ class MoveValidator(private val board: Board) {
         start: Position,
         piece: Piece,
         player: Player,
+        currentBoard: Board = board,
         visitedPositions: Set<Position> = emptySet()
     ): List<Move> {
+        // Cycle detection
+        if (start in visitedPositions) return emptyList()
+        
         val sequences = mutableListOf<Move>()
         val directions = Rules.getCaptureDirections(piece.type)
         
         for (dir in directions) {
             when (piece.type) {
                 PieceType.MAN -> {
-                    val singleCapture = findManCapture(start, dir, piece)
+                    val singleCapture = findManCapture(start, dir, piece, currentBoard)
                     if (singleCapture != null) {
-                        val newBoard = board.copy()
+                        // Promotion ends the turn
+                        if (singleCapture.promotedToKing) {
+                            sequences.add(singleCapture)
+                            continue
+                        }
+                        
+                        val newBoard = currentBoard.copy()
                         applyMoveToBoard(newBoard, singleCapture)
-                        val newPiece = newBoard.getPieceAt(singleCapture.to)!!
+                        val newPiece = newBoard.getPieceAt(singleCapture.to) ?: continue
                         
                         val furtherCaptures = findAllCaptureSequences(
                             start = singleCapture.to,
                             piece = newPiece,
                             player = player,
+                            currentBoard = newBoard,
                             visitedPositions = visitedPositions + start
                         )
                         
@@ -78,16 +89,17 @@ class MoveValidator(private val board: Board) {
                     }
                 }
                 PieceType.KING -> {
-                    val kingCaptures = findKingCaptures(start, dir, piece)
+                    val kingCaptures = findKingCaptures(start, dir, piece, currentBoard)
                     for (capture in kingCaptures) {
-                        val newBoard = board.copy()
+                        val newBoard = currentBoard.copy()
                         applyMoveToBoard(newBoard, capture)
-                        val newPiece = newBoard.getPieceAt(capture.to)!!
+                        val newPiece = newBoard.getPieceAt(capture.to) ?: continue
                         
                         val furtherCaptures = findAllCaptureSequences(
                             start = capture.to,
                             piece = newPiece,
                             player = player,
+                            currentBoard = newBoard,
                             visitedPositions = visitedPositions + start
                         )
                         
@@ -113,26 +125,36 @@ class MoveValidator(private val board: Board) {
         return sequences
     }
     
-    private fun findManCapture(start: Position, dir: Rules.Direction, piece: Piece): Move? {
+    private fun findManCapture(
+        start: Position,
+        dir: Rules.Direction,
+        piece: Piece,
+        currentBoard: Board = board
+    ): Move? {
         val jumped = start.step(dir.dr, dir.dc) ?: return null
         val landing = start.jump(dir.dr, dir.dc) ?: return null
         
-        val jumpedPiece = board.getPieceAt(jumped) ?: return null
+        val jumpedPiece = currentBoard.getPieceAt(jumped) ?: return null
         if (jumpedPiece.player == piece.player) return null
-        if (!board.isEmpty(landing)) return null
+        if (!currentBoard.isEmpty(landing)) return null
         
-        val promoted = Rules.isKingRow(landing, piece.player)
+        val promoted = piece.isMan() && Rules.isKingRow(landing, piece.player)
         return Move(start, landing, listOf(jumped), promoted)
     }
     
-    private fun findKingCaptures(start: Position, dir: Rules.Direction, piece: Piece): List<Move> {
+    private fun findKingCaptures(
+        start: Position,
+        dir: Rules.Direction,
+        piece: Piece,
+        currentBoard: Board = board
+    ): List<Move> {
         val captures = mutableListOf<Move>()
         var current = start.step(dir.dr, dir.dc) ?: return emptyList()
         var foundOpponent = false
         var jumpedPosition: Position? = null
         
         while (current.row in 0..7 && current.col in 0..7) {
-            val currentPiece = board.getPieceAt(current)
+            val currentPiece = currentBoard.getPieceAt(current)
             
             when {
                 currentPiece == null -> {
@@ -162,7 +184,7 @@ class MoveValidator(private val board: Board) {
                 PieceType.MAN -> {
                     val landing = position.step(dir.dr, dir.dc) ?: continue
                     if (board.isEmpty(landing)) {
-                        val promoted = Rules.isKingRow(landing, piece.player)
+                        val promoted = piece.isMan() && Rules.isKingRow(landing, piece.player)
                         moves.add(Move(position, landing, emptyList(), promoted))
                     }
                 }
