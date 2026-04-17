@@ -18,20 +18,22 @@ import com.lionico.draft.data.model.Player
 fun GameOverDialog(
     gameStatus: GameStatus,
     winner: Player?,
+    player1Name: String,
+    player2Name: String,
     onNewGame: () -> Unit,
     onMainMenu: () -> Unit,
     onDismiss: () -> Unit = {}
 ) {
     val title = when (gameStatus) {
-        GameStatus.PLAYER_1_WINS -> stringResource(R.string.player_1_wins)
-        GameStatus.PLAYER_2_WINS -> stringResource(R.string.player_2_wins)
+        GameStatus.PLAYER_1_WINS -> "${player1Name} Wins!"
+        GameStatus.PLAYER_2_WINS -> "${player2Name} Wins!"
         GameStatus.DRAW -> stringResource(R.string.draw)
         else -> stringResource(R.string.game_over)
     }
     
     val message = when (gameStatus) {
-        GameStatus.PLAYER_1_WINS -> stringResource(R.string.congratulations_p1)
-        GameStatus.PLAYER_2_WINS -> stringResource(R.string.congratulations_p2)
+        GameStatus.PLAYER_1_WINS -> "Congratulations! ${player1Name} has won the game."
+        GameStatus.PLAYER_2_WINS -> "Congratulations! ${player2Name} has won the game."
         GameStatus.DRAW -> stringResource(R.string.draw_message)
         else -> ""
     }
