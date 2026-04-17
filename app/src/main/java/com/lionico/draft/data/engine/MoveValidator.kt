@@ -7,144 +7,156 @@ import com.lionico.draft.data.model.PieceType
 import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.Position
 
-/**
- * Validates and generates all possible moves for a given board state.
- * Handles both regular moves and captures, enforcing compulsory capture rules.
- * King multi-square movement fully implemented.
- */
 class MoveValidator(private val board: Board) {
 
-    /**
-     * Returns all valid moves for the specified player.
-     * If any capture moves exist, only capture moves are returned (compulsory capture rule).
-     */
     fun getValidMoves(player: Player): List<Move> {
-        val captureMoves = mutableListOf<Move>()
-        val regularMoves = mutableListOf<Move>()
-
+        val allMoves = mutableListOf<Move>()
+        
         for (position in Position.PLAYABLE_SQUARES) {
             if (board.isPlayerPiece(position, player)) {
-                captureMoves.addAll(getCaptureMovesFrom(position))
+                val piece = board.getPieceAt(position)!!
+                val captureSequences = findAllCaptureSequences(position, piece, player)
+                if (captureSequences.isNotEmpty()) {
+                    allMoves.addAll(captureSequences)
+                }
             }
         }
-
-        if (captureMoves.isNotEmpty()) {
-            return captureMoves
+        
+        if (allMoves.isNotEmpty()) {
+            return allMoves
         }
-
+        
         for (position in Position.PLAYABLE_SQUARES) {
             if (board.isPlayerPiece(position, player)) {
-                regularMoves.addAll(getRegularMovesFrom(position))
+                val piece = board.getPieceAt(position)!!
+                allMoves.addAll(getRegularMovesFrom(position, piece))
             }
         }
-
-        return regularMoves
+        
+        return allMoves
     }
-
-    /**
-     * Checks if the specified player has any valid moves.
-     */
-    fun hasAnyValidMove(player: Player): Boolean {
-        return getValidMoves(player).isNotEmpty()
-    }
-
-    /**
-     * Returns all capture moves available from a specific position.
-     * Handles both men (single jump) and kings (multi-square jumps).
-     */
-    fun getCaptureMovesFrom(position: Position): List<Move> {
-        val piece = board.getPieceAt(position) ?: return emptyList()
-        val directions = Rules.getDirections(piece.type, piece.player)
-        val captureMoves = mutableListOf<Move>()
-
+    
+    private fun findAllCaptureSequences(
+        start: Position,
+        piece: Piece,
+        player: Player,
+        visitedPositions: Set<Position> = emptySet()
+    ): List<Move> {
+        val sequences = mutableListOf<Move>()
+        val directions = Rules.getCaptureDirections(piece.type)
+        
         for (dir in directions) {
             when (piece.type) {
                 PieceType.MAN -> {
-                    val capture = findManCapture(position, dir, piece)
-                    if (capture != null) captureMoves.add(capture)
+                    val singleCapture = findManCapture(start, dir, piece)
+                    if (singleCapture != null) {
+                        val newBoard = board.copy()
+                        applyMoveToBoard(newBoard, singleCapture)
+                        val newPiece = newBoard.getPieceAt(singleCapture.to)!!
+                        
+                        val furtherCaptures = findAllCaptureSequences(
+                            start = singleCapture.to,
+                            piece = newPiece,
+                            player = player,
+                            visitedPositions = visitedPositions + start
+                        )
+                        
+                        if (furtherCaptures.isEmpty()) {
+                            sequences.add(singleCapture)
+                        } else {
+                            for (further in furtherCaptures) {
+                                sequences.add(
+                                    Move(
+                                        from = start,
+                                        to = further.to,
+                                        capturedPositions = singleCapture.capturedPositions + further.capturedPositions,
+                                        promotedToKing = further.promotedToKing
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
                 PieceType.KING -> {
-                    captureMoves.addAll(findKingCaptures(position, dir, piece))
+                    val kingCaptures = findKingCaptures(start, dir, piece)
+                    for (capture in kingCaptures) {
+                        val newBoard = board.copy()
+                        applyMoveToBoard(newBoard, capture)
+                        val newPiece = newBoard.getPieceAt(capture.to)!!
+                        
+                        val furtherCaptures = findAllCaptureSequences(
+                            start = capture.to,
+                            piece = newPiece,
+                            player = player,
+                            visitedPositions = visitedPositions + start
+                        )
+                        
+                        if (furtherCaptures.isEmpty()) {
+                            sequences.add(capture)
+                        } else {
+                            for (further in furtherCaptures) {
+                                sequences.add(
+                                    Move(
+                                        from = start,
+                                        to = further.to,
+                                        capturedPositions = capture.capturedPositions + further.capturedPositions,
+                                        promotedToKing = further.promotedToKing
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
-
-        return captureMoves
+        
+        return sequences
     }
-
-    /**
-     * Finds a man's capture in a single direction.
-     * Men jump exactly 2 squares and land immediately behind the captured piece.
-     */
+    
     private fun findManCapture(start: Position, dir: Rules.Direction, piece: Piece): Move? {
         val jumped = start.step(dir.dr, dir.dc) ?: return null
         val landing = start.jump(dir.dr, dir.dc) ?: return null
-
+        
         val jumpedPiece = board.getPieceAt(jumped) ?: return null
         if (jumpedPiece.player == piece.player) return null
-
         if (!board.isEmpty(landing)) return null
-
+        
         val promoted = Rules.isKingRow(landing, piece.player)
         return Move(start, landing, listOf(jumped), promoted)
     }
-
-    /**
-     * Finds all king captures in a single direction.
-     * Kings can jump from any distance, landing on any empty square behind the captured piece.
-     * Cannot jump over multiple pieces in one move.
-     */
+    
     private fun findKingCaptures(start: Position, dir: Rules.Direction, piece: Piece): List<Move> {
         val captures = mutableListOf<Move>()
         var current = start.step(dir.dr, dir.dc) ?: return emptyList()
         var foundOpponent = false
         var jumpedPosition: Position? = null
-
+        
         while (current.row in 0..7 && current.col in 0..7) {
             val currentPiece = board.getPieceAt(current)
-
+            
             when {
                 currentPiece == null -> {
                     if (foundOpponent) {
-                        val promoted = Rules.isKingRow(current, piece.player)
-                        captures.add(Move(start, current, listOf(jumpedPosition!!), promoted))
+                        captures.add(Move(start, current, listOf(jumpedPosition!!), false))
                     }
                 }
-                currentPiece.player == piece.player -> {
-                    break
-                }
+                currentPiece.player == piece.player -> break
                 currentPiece.player != piece.player -> {
-                    if (foundOpponent) {
-                        break
-                    } else {
-                        foundOpponent = true
-                        jumpedPosition = current
-                    }
+                    if (foundOpponent) break
+                    foundOpponent = true
+                    jumpedPosition = current
                 }
             }
-
             current = current.step(dir.dr, dir.dc) ?: break
         }
-
+        
         return captures
     }
-
-    /**
-     * Checks if a piece at the given position has any capture moves available.
-     */
-    fun hasCaptureMoveFrom(position: Position): Boolean {
-        return getCaptureMovesFrom(position).isNotEmpty()
-    }
-
-    /**
-     * Returns all regular (non-capture) moves available from a specific position.
-     * Men move 1 square. Kings move any number of squares along empty diagonals.
-     */
-    private fun getRegularMovesFrom(position: Position): List<Move> {
-        val piece = board.getPieceAt(position) ?: return emptyList()
-        val directions = Rules.getDirections(piece.type, piece.player)
+    
+    private fun getRegularMovesFrom(position: Position, piece: Piece): List<Move> {
         val moves = mutableListOf<Move>()
-
+        val directions = Rules.getMoveDirections(piece.type, piece.player)
+        
         for (dir in directions) {
             when (piece.type) {
                 PieceType.MAN -> {
@@ -167,14 +179,26 @@ class MoveValidator(private val board: Board) {
                 }
             }
         }
-
+        
         return moves
     }
-
-    /**
-     * Returns the player who owns the piece at the given position.
-     */
-    fun getPiecePlayer(position: Position): Player? {
-        return board.getPieceAt(position)?.player
+    
+    private fun applyMoveToBoard(board: Board, move: Move) {
+        val piece = board.getPieceAt(move.from) ?: return
+        board.setPieceAt(move.from, null)
+        move.capturedPositions.forEach { board.setPieceAt(it, null) }
+        val finalPiece = if (move.promotedToKing) piece.copy(type = PieceType.KING) else piece
+        board.setPieceAt(move.to, finalPiece)
     }
+    
+    fun hasAnyValidMove(player: Player): Boolean = getValidMoves(player).isNotEmpty()
+    
+    fun getCaptureMovesFrom(position: Position): List<Move> {
+        val piece = board.getPieceAt(position) ?: return emptyList()
+        return findAllCaptureSequences(position, piece, piece.player)
+    }
+    
+    fun hasCaptureMoveFrom(position: Position): Boolean = getCaptureMovesFrom(position).isNotEmpty()
+    
+    fun getPiecePlayer(position: Position): Player? = board.getPieceAt(position)?.player
 }
