@@ -173,3 +173,38 @@ fun EmptySquareView(
         }
     }
 }
+
+// File: app/src/main/java/com/lionico/draft/ui/component/PieceView.kt
+// Add this function if not present, or update existing
+
+@Composable
+fun EmptySquareView(
+    isValidMove: Boolean,
+    isCapturePath: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    Box(
+        modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke() },
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(40.dp)) {
+            when {
+                isValidMove -> {
+                    drawCircle(
+                        color = Color.Green.copy(alpha = 0.5f),
+                        radius = size.width / 3,
+                        center = Offset(size.width / 2, size.height / 2)
+                    )
+                }
+                isCapturePath -> {
+                    drawCircle(
+                        color = Color.Yellow.copy(alpha = 0.5f),
+                        radius = size.width / 4,
+                        center = Offset(size.width / 2, size.height / 2)
+                    )
+                }
+            }
+        }
+    }
+} 
