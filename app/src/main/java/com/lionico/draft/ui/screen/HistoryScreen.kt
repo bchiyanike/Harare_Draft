@@ -30,11 +30,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.lionico.draft.R
 import com.lionico.draft.data.model.GameResult
+import com.lionico.draft.ui.viewmodel.HistoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,12 +50,12 @@ fun HistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Game History", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.history), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -71,7 +74,7 @@ fun HistoryScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No games played yet",
+                    text = stringResource(R.string.no_games_played),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -93,7 +96,7 @@ fun HistoryScreen(
 
 @Composable
 private fun HistoryCard(result: GameResult) {
-    val isWin = result.winner == result.player1Name
+    val isWin = result.winner == result.player1Name && result.winner != "Draw"
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -116,20 +119,22 @@ private fun HistoryCard(result: GameResult) {
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = if (isWin) Color(0xFF4CAF50) else Color(0xFFF44336),
-                            shape = RoundedCornerShape(8.dp)
+                if (result.winner != "Draw") {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = if (isWin) Color(0xFF4CAF50) else Color(0xFFF44336),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (isWin) stringResource(R.string.win) else stringResource(R.string.loss),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = if (isWin) "WIN" else "LOSS",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    }
                 }
             }
             
@@ -150,7 +155,7 @@ private fun HistoryCard(result: GameResult) {
             }
             
             Text(
-                text = "Winner: ${result.winner}",
+                text = "${stringResource(R.string.winner_label)}: ${result.winner}",
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 4.dp)
