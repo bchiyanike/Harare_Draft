@@ -19,8 +19,19 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    // 🔐 CI SIGNING CONFIG (USED FOR ALL BUILDS)
+    signingConfigs {
+        create("ci") {
+            storeFile = file("../release.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
 
@@ -28,13 +39,20 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+
+            signingConfig = signingConfigs.getByName("ci")
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
+
         debug {
             isMinifyEnabled = false
+
+            // 🔥 Force debug to use same signing key as release
+            signingConfig = signingConfigs.getByName("ci")
         }
     }
 
@@ -88,10 +106,10 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
-    // DataStore - Player name persistence
+    // DataStore
     implementation(libs.androidx.datastore.preferences)
 
-    // Room - Game history
+    // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
