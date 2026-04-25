@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.lionico.draft.data.ai.Difficulty
+import com.lionico.draft.ui.screen.DebugScreen
 import com.lionico.draft.ui.screen.GameScreen
 import com.lionico.draft.ui.screen.MainMenuScreen
 import com.lionico.draft.ui.theme.LionicoTheme
@@ -50,8 +51,20 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = "main_menu"
+        startDestination = "debug" // --- DEBUG: change back to "main_menu" before release ---
     ) {
+        // --- DEBUG: remove this composable before release ---
+        composable("debug") {
+            DebugScreen(
+                onContinue = {
+                    navController.navigate("main_menu") {
+                        popUpTo("debug") { inclusive = true }
+                    }
+                }
+            )
+        }
+        // --- END DEBUG ---
+
         composable("main_menu") {
             MainMenuScreen(
                 onPlayVsFriendSameDevice = {
