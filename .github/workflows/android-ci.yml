@@ -22,6 +22,10 @@ env:
   JAVA_VERSION: 17
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+  KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+  KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+  KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -29,6 +33,8 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK
         uses: actions/setup-java@v4.2.1
@@ -40,8 +46,9 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3.2.0
 
-      - name: Checkout target branch
-        run: git checkout ${{ inputs.branch }}
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
 
       - name: Grant Gradle permissions
         run: chmod +x ./gradlew
@@ -88,8 +95,6 @@ jobs:
 
       - name: Build summary
         run: |
-          echo "✅ Build complete"
+          echo "Build complete"
           echo "Branch: ${{ inputs.branch }}"
           echo "Variant: ${{ inputs.build_type }}"
-          echo "Artifacts:"
-          ls -lh ${{ env.APP_MODULE }}/build/outputs/apk/${{ inputs.build_type }}/*.apk
