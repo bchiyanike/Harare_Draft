@@ -19,6 +19,7 @@ import androidx.navigation.navArgument
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.ui.screen.DebugScreen
 import com.lionico.draft.ui.screen.GameScreen
+import com.lionico.draft.ui.screen.HistoryScreen
 import com.lionico.draft.ui.screen.MainMenuScreen
 import com.lionico.draft.ui.theme.LionicoTheme
 import com.lionico.draft.ui.viewmodel.GameMode
@@ -72,22 +73,45 @@ fun AppNavigation() {
                 },
                 onPlayVsAI = { difficulty ->
                     navController.navigate("game/player_vs_computer/${difficulty.name.lowercase()}")
+                },
+                onHistory = {
+                    navController.navigate("history")
+                }
+            )
+        }
+
+        composable("history") {
+            HistoryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onReplay = { gameId ->
+                    navController.navigate("replay/$gameId?mode=replay")
+                },
+                onAnalyze = { gameId ->
+                    navController.navigate("replay/$gameId?mode=analysis")
+                },
+                onContinueVsAI = { gameId ->
+                    navController.navigate("game/player_vs_computer/medium?gameId=$gameId")
                 }
             )
         }
 
         composable(
-            route = "game/{mode}/{difficulty}",
+            route = "game/{mode}/{difficulty}?gameId={gameId}",
             arguments = listOf(
                 navArgument("mode") { type = NavType.StringType },
                 navArgument("difficulty") {
                     type = NavType.StringType
                     defaultValue = "medium"
+                },
+                navArgument("gameId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
                 }
             )
         ) { backStackEntry ->
             val mode = backStackEntry.arguments?.getString("mode") ?: "player_vs_player"
             val difficultyString = backStackEntry.arguments?.getString("difficulty") ?: "medium"
+            val gameId = backStackEntry.arguments?.getLong("gameId") ?: -1L
 
             val gameMode = when (mode) {
                 "player_vs_computer" -> GameMode.PLAYER_VS_COMPUTER
@@ -103,10 +127,27 @@ fun AppNavigation() {
             GameScreen(
                 gameMode = gameMode,
                 difficulty = difficulty,
+                gameId = gameId.takeIf { it != -1L },
                 onNavigateBack = {
                     navController.popBackStack()
                 }
             )
+        }
+
+        composable(
+            route = "replay/{gameId}?mode={mode}",
+            arguments = listOf(
+                navArgument("gameId") { type = NavType.LongType },
+                navArgument("mode") {
+                    type = NavType.StringType
+                    defaultValue = "replay"
+                }
+            )
+        ) { backStackEntry ->
+            val gameId = backStackEntry.arguments?.getLong("gameId") ?: return@composable
+            val mode = backStackEntry.arguments?.getString("mode") ?: "replay"
+            // Placeholder — ReplayScreen will be added in next step
+            androidx.compose.material3.Text("Replay screen: gameId=$gameId mode=$mode")
         }
     }
 }
