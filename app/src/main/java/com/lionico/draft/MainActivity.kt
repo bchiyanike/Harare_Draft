@@ -21,6 +21,7 @@ import com.lionico.draft.ui.screen.DebugScreen
 import com.lionico.draft.ui.screen.GameScreen
 import com.lionico.draft.ui.screen.HistoryScreen
 import com.lionico.draft.ui.screen.MainMenuScreen
+import com.lionico.draft.ui.screen.ReplayScreen
 import com.lionico.draft.ui.theme.LionicoTheme
 import com.lionico.draft.ui.viewmodel.GameMode
 import dagger.hilt.android.AndroidEntryPoint
@@ -146,8 +147,11 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val gameId = backStackEntry.arguments?.getLong("gameId") ?: return@composable
             val mode = backStackEntry.arguments?.getString("mode") ?: "replay"
-            // Placeholder — ReplayScreen will be added in next step
-            androidx.compose.material3.Text("Replay screen: gameId=$gameId mode=$mode")
+            ReplayScreen(
+                gameId = gameId,
+                initialMode = mode,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }
