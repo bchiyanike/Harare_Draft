@@ -11,13 +11,15 @@ class GameHistoryRepository @Inject constructor(
     private val dao: GameHistoryDao
 ) {
     fun getAllResults(): Flow<List<GameResult>> = dao.getAllResults()
-    
+
     suspend fun saveResult(result: GameResult) {
         dao.insert(result)
     }
-    
+
     suspend fun getWinCount(playerName: String): Int = dao.getWinCount(playerName)
-    
+
+    suspend fun getGameById(gameId: Long): GameResult? = dao.getGameById(gameId)
+
     suspend fun clearHistory() {
         dao.clearAll()
     }
