@@ -16,12 +16,13 @@ data class GameResult(
     val date: Long = System.currentTimeMillis(),
     val durationSeconds: Int,
     val player1PiecesRemaining: Int,
-    val player2PiecesRemaining: Int
+    val player2PiecesRemaining: Int,
+    val movesJson: String = ""
 ) {
     val formattedDate: String
         get() = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
             .format(Date(date))
-    
+
     val formattedTime: String
         get() = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
             .format(Date(date))
