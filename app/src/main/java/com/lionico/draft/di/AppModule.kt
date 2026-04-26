@@ -73,7 +73,9 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "draft_history.db"
-        ).build()
+        )
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides
