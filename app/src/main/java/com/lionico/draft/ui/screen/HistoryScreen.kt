@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -43,10 +44,13 @@ import com.lionico.draft.ui.viewmodel.HistoryViewModel
 @Composable
 fun HistoryScreen(
     onNavigateBack: () -> Unit,
+    onReplay: (Long) -> Unit = {},
+    onAnalyze: (Long) -> Unit = {},
+    onContinueVsAI: (Long) -> Unit = {},
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
     val history by viewModel.history.collectAsState()
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -87,7 +91,12 @@ fun HistoryScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(history) { result ->
-                    HistoryCard(result)
+                    HistoryCard(
+                        result = result,
+                        onReplay = onReplay,
+                        onAnalyze = onAnalyze,
+                        onContinueVsAI = onContinueVsAI
+                    )
                 }
             }
         }
@@ -95,9 +104,14 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun HistoryCard(result: GameResult) {
+private fun HistoryCard(
+    result: GameResult,
+    onReplay: (Long) -> Unit,
+    onAnalyze: (Long) -> Unit,
+    onContinueVsAI: (Long) -> Unit
+) {
     val isWin = result.winner == result.player1Name && result.winner != "Draw"
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -137,7 +151,7 @@ private fun HistoryCard(result: GameResult) {
                     }
                 }
             }
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -153,13 +167,28 @@ private fun HistoryCard(result: GameResult) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             Text(
                 text = "${stringResource(R.string.winner_label)}: ${result.winner}",
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 4.dp)
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(onClick = { onReplay(result.id) }) {
+                    Text("Replay")
+                }
+                TextButton(onClick = { onAnalyze(result.id) }) {
+                    Text("Analysis")
+                }
+                TextButton(onClick = { onContinueVsAI(result.id) }) {
+                    Text("Continue vs AI")
+                }
+            }
         }
     }
 }
