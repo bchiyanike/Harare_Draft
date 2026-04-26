@@ -63,6 +63,7 @@ import java.io.File
 fun MainMenuScreen(
     onPlayVsFriendSameDevice: () -> Unit,
     onPlayVsAI: (Difficulty) -> Unit,
+    onHistory: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: MainMenuViewModel = hiltViewModel()
 ) {
@@ -167,6 +168,25 @@ fun MainMenuScreen(
                     text = stringResource(R.string.create_game),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        item {
+            Button(
+                onClick = onHistory,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "Game History",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
