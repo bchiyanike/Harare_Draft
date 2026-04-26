@@ -1,6 +1,7 @@
 // File: app/src/main/java/com/lionico/draft/data/engine/GameEngine.kt
 package com.lionico.draft.data.engine
 
+import com.lionico.draft.data.model.GameMove
 import com.lionico.draft.data.model.GameStatus
 import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.PieceType
@@ -15,6 +16,9 @@ class GameEngine {
     private var winner: Player? = null
 
     var onGameEnd: ((winner: Player?, status: GameStatus) -> Unit)? = null
+
+    /** Recorded moves for serialization / replay. Cleared on newGame. */
+    private val _moveHistory = mutableListOf<GameMove>()
 
     fun getBoard(): Board = board.copy()
     fun getCurrentPlayer(): Player = currentPlayer
@@ -35,15 +39,19 @@ class GameEngine {
 
         val validator = MoveValidator(board)
         val validMoves = validator.getValidMoves(currentPlayer)
-        
+
         if (!validMoves.any { it.from == move.from && it.to == move.to }) {
             return false
         }
 
+        // Record the move before applying
+        val playerBeforeMove = currentPlayer
+        _moveHistory.add(GameMove.fromDomainMove(move, playerBeforeMove))
+
         // Apply the complete move (entire sequence already encoded)
         board.setPieceAt(move.from, null)
         move.capturedPositions.forEach { board.setPieceAt(it, null) }
-        
+
         val finalPiece = if (move.promotedToKing) {
             piece.copy(type = PieceType.KING)
         } else {
@@ -103,6 +111,7 @@ class GameEngine {
         currentPlayer = Player.PLAYER_1
         gameStatus = GameStatus.ONGOING
         winner = null
+        _moveHistory.clear()
     }
 
     fun getPieceCounts(): Pair<Int, Int> {
@@ -110,5 +119,22 @@ class GameEngine {
             board.countPieces(Player.PLAYER_1),
             board.countPieces(Player.PLAYER_2)
         )
+    }
+
+    /**
+     * Returns a copy of the recorded move history for serialization.
+     */
+    fun getMoveHistory(): List<GameMove> = _moveHistory.toList()
+
+    /**
+     * Loads a given board state and sets the current player.
+     * Resets game status to ONGOING. Used for replay and continue-vs-AI.
+     */
+    fun loadPosition(board: Board, player: Player) {
+        this.board = board.copy()
+        this.currentPlayer = player
+        this.gameStatus = GameStatus.ONGOING
+        this.winner = null
+        _moveHistory.clear()
     }
 }
