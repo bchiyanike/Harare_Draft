@@ -8,6 +8,7 @@ import com.lionico.draft.data.datastore.PlayerPreferences
 import com.lionico.draft.data.engine.Board
 import com.lionico.draft.data.engine.GameEngine
 import com.lionico.draft.data.model.GameClock
+import com.lionico.draft.data.model.GameMove
 import com.lionico.draft.data.model.GameResult
 import com.lionico.draft.data.model.GameStatus
 import com.lionico.draft.data.model.Move
@@ -94,7 +95,7 @@ class GameViewModel @Inject constructor(
     fun setGameMode(mode: GameMode, difficulty: Difficulty = Difficulty.MEDIUM) {
         this.gameMode = mode
         this.aiDifficulty = difficulty
-        
+
         if (mode == GameMode.PLAYER_VS_COMPUTER) {
             viewModelScope.launch {
                 val aiName = PlayerPreferences.randomAIName()
@@ -102,7 +103,7 @@ class GameViewModel @Inject constructor(
                 playerPreferences.setPlayer2Name(aiName)
             }
         }
-        
+
         resetGame()
     }
 
@@ -158,7 +159,7 @@ class GameViewModel @Inject constructor(
         if (success) {
             updateUIState()
             clearSelection()
-            
+
             gameClock.switchTo(_currentPlayer.value)
 
             if (gameMode == GameMode.PLAYER_VS_COMPUTER &&
@@ -166,7 +167,7 @@ class GameViewModel @Inject constructor(
                 _gameStatus.value == GameStatus.ONGOING) {
                 makeAIMove()
             }
-            
+
             checkAndHandleGameOver()
         }
     }
@@ -218,9 +219,9 @@ class GameViewModel @Inject constructor(
                 GameStatus.PLAYER_2_WINS -> _player2Name.value
                 else -> "Draw"
             }
-            
+
             val duration = ((System.currentTimeMillis() - gameStartTime) / 1000).toInt()
-            
+
             val result = GameResult(
                 player1Name = _player1Name.value,
                 player2Name = _player2Name.value,
@@ -228,9 +229,10 @@ class GameViewModel @Inject constructor(
                 gameMode = gameMode.name,
                 durationSeconds = duration,
                 player1PiecesRemaining = gameEngine.getPieceCounts().first,
-                player2PiecesRemaining = gameEngine.getPieceCounts().second
+                player2PiecesRemaining = gameEngine.getPieceCounts().second,
+                movesJson = GameMove.serialize(gameEngine.getMoveHistory())
             )
-            
+
             historyRepository.saveResult(result)
         }
     }
@@ -251,14 +253,14 @@ class GameViewModel @Inject constructor(
     private fun handleTimeOut(player: Player) {
         gameClock.pause()
         clockTickJob?.cancel()
-        
+
         _gameStatus.value = if (player == Player.PLAYER_1) {
             GameStatus.PLAYER_2_WINS
         } else {
             GameStatus.PLAYER_1_WINS
         }
         _winner.value = if (player == Player.PLAYER_1) Player.PLAYER_2 else Player.PLAYER_1
-        
+
         saveGameResult()
     }
 
@@ -292,7 +294,45 @@ class GameViewModel @Inject constructor(
     }
 
     fun getPieceCounts(): Pair<Int, Int> = gameEngine.getPieceCounts()
-    
+
+    /**
+     * Load a previously saved game and set up to continue playing vs AI.
+     * Replays the stored moves to reconstruct the final board, then
+     * sets the game mode to Player vs Computer with AI as Player 2.
+     */
+    suspend fun continueFromGame(gameId: Long) {
+        val gameResult = historyRepository.getGameById(gameId) ?: return
+        val moves = GameMove.deserialize(gameResult.movesJson)
+        gameEngine.newGame()
+        for (gameMove in moves) {
+            val move = GameMove.toDomainMove(gameMove)
+            gameEngine.executeMove(move)
+        }
+        // Ensure the engine is in a clean ONGOING state with the correct player to move
+        gameEngine.loadPosition(gameEngine.getBoard(), gameEngine.getCurrentPlayer())
+
+        gameMode = GameMode.PLAYER_VS_COMPUTER
+        aiDifficulty = Difficulty.MEDIUM  // could later be made configurable
+
+        viewModelScope.launch {
+            val aiName = PlayerPreferences.randomAIName()
+            _player2Name.value = aiName
+            playerPreferences.setPlayer2Name(aiName)
+        }
+
+        gameStartTime = System.currentTimeMillis()
+        startClock()
+        gameClock.start(gameEngine.getCurrentPlayer())
+
+        updateUIState()
+        clearSelection()
+        _isAIThinking.value = false
+
+        if (gameEngine.getCurrentPlayer() == Player.PLAYER_2) {
+            makeAIMove()
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         clockTickJob?.cancel()
