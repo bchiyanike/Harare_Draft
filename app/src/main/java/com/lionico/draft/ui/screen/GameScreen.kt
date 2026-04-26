@@ -35,6 +35,7 @@ import com.lionico.draft.ui.viewmodel.GameViewModel
 fun GameScreen(
     gameMode: GameMode,
     difficulty: Difficulty = Difficulty.MEDIUM,
+    gameId: Long? = null,
     onNavigateBack: () -> Unit,
     viewModel: GameViewModel = hiltViewModel()
 ) {
@@ -49,19 +50,24 @@ fun GameScreen(
     val player1Name by viewModel.player1Name.collectAsState()
     val player2Name by viewModel.player2Name.collectAsState()
     val pieceCounts = viewModel.getPieceCounts()
-    
-    LaunchedEffect(gameMode, difficulty) {
-        viewModel.setGameMode(gameMode, difficulty)
+
+    LaunchedEffect(gameMode, difficulty, gameId) {
+        if (gameId != null) {
+            viewModel.continueFromGame(gameId)
+        } else {
+            viewModel.setGameMode(gameMode, difficulty)
+        }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = when (gameMode) {
-                            GameMode.PLAYER_VS_PLAYER -> stringResource(R.string.play_vs_player)
-                            GameMode.PLAYER_VS_COMPUTER -> stringResource(R.string.play_vs_computer)
+                        text = when {
+                            gameId != null -> stringResource(R.string.play_vs_computer)
+                            gameMode == GameMode.PLAYER_VS_PLAYER -> stringResource(R.string.play_vs_player)
+                            else -> stringResource(R.string.play_vs_computer)
                         },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium
@@ -87,7 +93,7 @@ fun GameScreen(
                 player2Name = player2Name,
                 modifier = Modifier.padding(top = 8.dp)
             )
-            
+
             GameStatusBar(
                 currentPlayer = currentPlayer,
                 player1Pieces = pieceCounts.first,
@@ -97,7 +103,7 @@ fun GameScreen(
                 isAIThinking = isAIThinking,
                 modifier = Modifier.padding(top = 4.dp)
             )
-            
+
             BoardView(
                 board = boardState,
                 selectedPosition = selectedPosition,
@@ -107,14 +113,14 @@ fun GameScreen(
                     .weight(1f)
                     .padding(8.dp)
             )
-            
+
             GameControls(
                 onNewGame = { viewModel.resetGame() },
                 onBack = onNavigateBack,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
-        
+
         if (gameStatus != GameStatus.ONGOING) {
             GameOverDialog(
                 gameStatus = gameStatus,
