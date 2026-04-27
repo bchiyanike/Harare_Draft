@@ -16,7 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.lionico.draft.data.ai.Difficulty
+import com.lionico.draft.data.model.TimeControl
 import com.lionico.draft.ui.screen.DebugScreen
 import com.lionico.draft.ui.screen.GameScreen
 import com.lionico.draft.ui.screen.HistoryScreen
@@ -69,11 +69,11 @@ fun AppNavigation() {
 
         composable("main_menu") {
             MainMenuScreen(
-                onPlayVsFriendSameDevice = {
-                    navController.navigate("game/player_vs_player/medium")
+                onPlayVsFriend = { timeControl ->
+                    navController.navigate("game/player_vs_player?timeControl=${timeControl.label()}")
                 },
-                onPlayVsAI = { difficulty ->
-                    navController.navigate("game/player_vs_computer/${difficulty.name.lowercase()}")
+                onPlayVsComputer = { timeControl ->
+                    navController.navigate("game/player_vs_computer?timeControl=${timeControl.label()}")
                 },
                 onHistory = {
                     navController.navigate("history")
@@ -91,18 +91,19 @@ fun AppNavigation() {
                     navController.navigate("replay/$gameId?mode=analysis")
                 },
                 onContinueVsAI = { gameId ->
-                    navController.navigate("game/player_vs_computer/medium?gameId=$gameId")
+                    // For continue, default to a time control (could be stored in history)
+                    navController.navigate("game/player_vs_computer?timeControl=3+2&gameId=$gameId")
                 }
             )
         }
 
         composable(
-            route = "game/{mode}/{difficulty}?gameId={gameId}",
+            route = "game/{mode}?timeControl={timeControl}&gameId={gameId}",
             arguments = listOf(
                 navArgument("mode") { type = NavType.StringType },
-                navArgument("difficulty") {
+                navArgument("timeControl") {
                     type = NavType.StringType
-                    defaultValue = "medium"
+                    defaultValue = "3+2"
                 },
                 navArgument("gameId") {
                     type = NavType.LongType
@@ -111,7 +112,7 @@ fun AppNavigation() {
             )
         ) { backStackEntry ->
             val mode = backStackEntry.arguments?.getString("mode") ?: "player_vs_player"
-            val difficultyString = backStackEntry.arguments?.getString("difficulty") ?: "medium"
+            val timeControlLabel = backStackEntry.arguments?.getString("timeControl") ?: "3+2"
             val gameId = backStackEntry.arguments?.getLong("gameId") ?: -1L
 
             val gameMode = when (mode) {
@@ -119,15 +120,12 @@ fun AppNavigation() {
                 else -> GameMode.PLAYER_VS_PLAYER
             }
 
-            val difficulty = when (difficultyString.lowercase()) {
-                "easy" -> Difficulty.EASY
-                "hard" -> Difficulty.HARD
-                else -> Difficulty.MEDIUM
-            }
+            val timeControl = TimeControl.PRESETS.find { it.label() == timeControlLabel }
+                ?: TimeControl.DEFAULT // fallback
 
             GameScreen(
                 gameMode = gameMode,
-                difficulty = difficulty,
+                timeControl = timeControl,
                 gameId = gameId.takeIf { it != -1L },
                 onNavigateBack = {
                     navController.popBackStack()
