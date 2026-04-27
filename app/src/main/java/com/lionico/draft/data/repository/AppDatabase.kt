@@ -9,7 +9,7 @@ import com.lionico.draft.data.model.GameResult
 
 @Database(
     entities = [GameResult::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -20,6 +20,14 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     "ALTER TABLE game_history ADD COLUMN movesJson TEXT NOT NULL DEFAULT ''"
+                )
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE game_history ADD COLUMN timeControlLabel TEXT NOT NULL DEFAULT ''"
                 )
             }
         }
