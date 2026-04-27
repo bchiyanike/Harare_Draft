@@ -7,7 +7,6 @@ data class TimeControl(
 ) {
     val totalSeconds: Int get() = (baseMinutes * 60).toInt()
 
-    /** Human-readable label, e.g. "½+0", "3+2", "5+0" */
     fun label(): String {
         val baseStr = if (baseMinutes == 0.5) "½" else baseMinutes.toInt().toString()
         return if (incrementSeconds > 0) "$baseStr+$incrementSeconds" else baseStr
@@ -33,5 +32,9 @@ data class TimeControl(
             TimeControl(3.0, 2),
             TimeControl(5.0, 0)
         )
+
+        /** Returns the TimeControl matching the label, or the first preset as fallback. */
+        fun fromLabel(label: String): TimeControl =
+            PRESETS.find { it.label() == label } ?: PRESETS.first()
     }
 }
