@@ -4,6 +4,7 @@ package com.lionico.draft.ui.screen
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,16 +44,15 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lionico.draft.R
-import com.lionico.draft.data.ai.Difficulty
+import com.lionico.draft.data.model.TimeControl
+import com.lionico.draft.ui.component.AIDifficultySheet
+import com.lionico.draft.ui.component.ClockSelectionSheet
+import com.lionico.draft.ui.component.FriendOptionsSheet
 import com.lionico.draft.ui.component.PlayerNameCard
 import com.lionico.draft.ui.component.PlayerNameDialog
-import com.lionico.draft.ui.component.QuickPlayGrid
 import com.lionico.draft.ui.component.SectionHeader
 import com.lionico.draft.ui.component.StatBadge
 import com.lionico.draft.ui.component.StreamCard
-import com.lionico.draft.ui.component.FriendOptionsCard
-import com.lionico.draft.ui.component.AIDifficultySheet
-import com.lionico.draft.ui.component.StreamData
 import com.lionico.draft.ui.component.sampleStreams
 import com.lionico.draft.ui.viewmodel.MainMenuViewModel
 import kotlinx.coroutines.launch
@@ -61,17 +61,21 @@ import java.io.File
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(
-    onPlayVsFriendSameDevice: () -> Unit,
-    onPlayVsAI: (Difficulty) -> Unit,
+    onPlayVsFriend: (TimeControl) -> Unit,
+    onPlayVsComputer: (TimeControl) -> Unit,
     onHistory: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: MainMenuViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var showAIDifficultySheet by remember { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
     var crashLog by remember { mutableStateOf("") }
+    // Clock selection flow
+    var showClockSheet by remember { mutableStateOf(false) }
+    var selectedClock by remember { mutableStateOf<TimeControl?>(null) }
+    var pendingMode by remember { mutableStateOf<String?>(null) } // "friend" or "computer"
+    var showFriendOptions by remember { mutableStateOf(false) }
 
     val playerNames by viewModel.playerNames.collectAsStateWithLifecycle(initialValue = null)
 
@@ -122,27 +126,51 @@ fun MainMenuScreen(
             )
         }
 
+        // Main play buttons
         item {
-            SectionHeader(title = stringResource(R.string.quick_play))
+            SectionHeader(title = "Play")
         }
-
         item {
-            QuickPlayGrid(
-                onPlayVsFriendSameDevice = onPlayVsFriendSameDevice,
-                onPlayVsAI = { showAIDifficultySheet = true }
-            )
+            Button(
+                onClick = {
+                    pendingMode = "friend"
+                    showClockSheet = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "Play with a Friend",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
-
         item {
-            SectionHeader(title = stringResource(R.string.play_with_friend))
-        }
-
-        item {
-            FriendOptionsCard(
-                onSameDevice = onPlayVsFriendSameDevice,
-                onBluetooth = showComingSoonToast,
-                onInternet = showComingSoonToast
-            )
+            Button(
+                onClick = {
+                    pendingMode = "computer"
+                    showClockSheet = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "Play with the Computer",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
         item {
@@ -238,6 +266,48 @@ fun MainMenuScreen(
     }
     // --- END DEBUG ---
 
+    // Clock selection sheet
+    if (showClockSheet) {
+        ClockSelectionSheet(
+            onSelect = { clock ->
+                showClockSheet = false
+                selectedClock = clock
+                if (pendingMode == "friend") {
+                    showFriendOptions = true
+                } else if (pendingMode == "computer") {
+                    onPlayVsComputer(clock)
+                }
+                pendingMode = null
+            },
+            onDismiss = {
+                showClockSheet = false
+                pendingMode = null
+            }
+        )
+    }
+
+    // Friend options sheet (after clock selection)
+    if (showFriendOptions && selectedClock != null) {
+        FriendOptionsSheet(
+            onSameDevice = {
+                showFriendOptions = false
+                onPlayVsFriend(selectedClock!!)
+            },
+            onBluetooth = {
+                showFriendOptions = false
+                showComingSoonToast()
+            },
+            onOnline = {
+                showFriendOptions = false
+                showComingSoonToast()
+            },
+            onDismiss = {
+                showFriendOptions = false
+            }
+        )
+    }
+
+    // Name dialog
     if (showNameDialog && playerNames != null) {
         PlayerNameDialog(
             currentPlayer1Name = playerNames!!.player1Name,
@@ -250,16 +320,6 @@ fun MainMenuScreen(
                 showNameDialog = false
             },
             onDismiss = { showNameDialog = false }
-        )
-    }
-
-    if (showAIDifficultySheet) {
-        AIDifficultySheet(
-            onSelect = { difficulty ->
-                showAIDifficultySheet = false
-                onPlayVsAI(difficulty)
-            },
-            onDismiss = { showAIDifficultySheet = false }
         )
     }
 }
