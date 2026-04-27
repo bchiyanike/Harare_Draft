@@ -14,6 +14,7 @@ import com.lionico.draft.data.model.GameStatus
 import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.Position
+import com.lionico.draft.data.model.TimeControl
 import com.lionico.draft.data.repository.GameHistoryRepository
 import com.lionico.draft.domain.usecase.CheckGameOverUseCase
 import com.lionico.draft.domain.usecase.ExecuteMoveUseCase
@@ -73,6 +74,7 @@ class GameViewModel @Inject constructor(
 
     private var gameMode = GameMode.PLAYER_VS_PLAYER
     private var aiDifficulty = Difficulty.MEDIUM
+    private var currentTimeControl = TimeControl.PRESETS.last() // will be set properly in startGame
     private var gameStartTime = 0L
 
     private val gameClock = GameClock()
@@ -92,19 +94,23 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    fun setGameMode(mode: GameMode, difficulty: Difficulty = Difficulty.MEDIUM) {
+    /**
+     * Start a new game with the chosen mode and time control.
+     * Difficulty for AI is read from stored preferences.
+     */
+    fun startGame(mode: GameMode, timeControl: TimeControl) {
         this.gameMode = mode
-        this.aiDifficulty = difficulty
+        this.currentTimeControl = timeControl
 
-        if (mode == GameMode.PLAYER_VS_COMPUTER) {
-            viewModelScope.launch {
-                val aiName = PlayerPreferences.randomAIName()
+        viewModelScope.launch {
+            if (mode == GameMode.PLAYER_VS_COMPUTER) {
+                aiDifficulty = playerPreferences.difficulty.value ?: Difficulty.MEDIUM
+                val aiName = PlayerPreferences.randomAIName(aiDifficulty)
                 _player2Name.value = aiName
                 playerPreferences.setPlayer2Name(aiName)
             }
+            resetGame()
         }
-
-        resetGame()
     }
 
     fun onSquareClick(position: Position) {
@@ -230,7 +236,8 @@ class GameViewModel @Inject constructor(
                 durationSeconds = duration,
                 player1PiecesRemaining = gameEngine.getPieceCounts().first,
                 player2PiecesRemaining = gameEngine.getPieceCounts().second,
-                movesJson = GameMove.serialize(gameEngine.getMoveHistory())
+                movesJson = GameMove.serialize(gameEngine.getMoveHistory()),
+                timeControlLabel = currentTimeControl.label()
             )
 
             historyRepository.saveResult(result)
@@ -266,7 +273,7 @@ class GameViewModel @Inject constructor(
 
     fun resetGame() {
         gameEngine.newGame()
-        gameClock.reset()
+        gameClock.reset(currentTimeControl)
         gameStartTime = System.currentTimeMillis()
         startClock()
         gameClock.start(Player.PLAYER_1)
@@ -296,11 +303,10 @@ class GameViewModel @Inject constructor(
     fun getPieceCounts(): Pair<Int, Int> = gameEngine.getPieceCounts()
 
     /**
-     * Load a previously saved game and set up to continue playing vs AI.
-     * Replays the stored moves to reconstruct the final board, then
-     * sets the game mode to Player vs Computer with AI as Player 2.
+     * Load a previously saved game and set up to continue playing vs AI
+     * with the given time control.
      */
-    suspend fun continueFromGame(gameId: Long) {
+    suspend fun continueFromGame(gameId: Long, timeControl: TimeControl) {
         val gameResult = historyRepository.getGameById(gameId) ?: return
         val moves = GameMove.deserialize(gameResult.movesJson)
         gameEngine.newGame()
@@ -308,19 +314,20 @@ class GameViewModel @Inject constructor(
             val move = GameMove.toDomainMove(gameMove)
             gameEngine.executeMove(move)
         }
-        // Ensure the engine is in a clean ONGOING state with the correct player to move
         gameEngine.loadPosition(gameEngine.getBoard(), gameEngine.getCurrentPlayer())
 
         gameMode = GameMode.PLAYER_VS_COMPUTER
-        aiDifficulty = Difficulty.MEDIUM  // could later be made configurable
+        this.currentTimeControl = timeControl
+        aiDifficulty = playerPreferences.difficulty.value ?: Difficulty.MEDIUM
 
         viewModelScope.launch {
-            val aiName = PlayerPreferences.randomAIName()
+            val aiName = PlayerPreferences.randomAIName(aiDifficulty)
             _player2Name.value = aiName
             playerPreferences.setPlayer2Name(aiName)
         }
 
         gameStartTime = System.currentTimeMillis()
+        gameClock.reset(timeControl)
         startClock()
         gameClock.start(gameEngine.getCurrentPlayer())
 
