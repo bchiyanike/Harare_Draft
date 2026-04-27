@@ -17,7 +17,8 @@ data class GameResult(
     val durationSeconds: Int,
     val player1PiecesRemaining: Int,
     val player2PiecesRemaining: Int,
-    val movesJson: String = ""
+    val movesJson: String = "",
+    val timeControlLabel: String = ""
 ) {
     val formattedDate: String
         get() = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
