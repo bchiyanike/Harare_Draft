@@ -13,42 +13,60 @@ data class ClockState(
 )
 
 class GameClock(
-    private val initialTimeSeconds: Int = 300 // 5 minutes default
+    timeControl: TimeControl = TimeControl.DEFAULT
 ) {
+    private val incrementSeconds = timeControl.incrementSeconds
+
     private val _state = MutableStateFlow(
         ClockState(
-            player1TimeSeconds = initialTimeSeconds,
-            player2TimeSeconds = initialTimeSeconds,
+            player1TimeSeconds = timeControl.totalSeconds,
+            player2TimeSeconds = timeControl.totalSeconds,
             isRunning = false,
             activePlayer = null
         )
     )
     val state: StateFlow<ClockState> = _state.asStateFlow()
-    
+
     private var timerJob: kotlinx.coroutines.Job? = null
-    
+
     fun start(player: Player) {
         _state.value = _state.value.copy(
             isRunning = true,
             activePlayer = player
         )
     }
-    
+
     fun pause() {
         _state.value = _state.value.copy(
             isRunning = false,
             activePlayer = null
         )
     }
-    
+
+    /**
+     * Switches the active clock. Applies the increment to the player
+     * who just completed their move (the current active player).
+     */
     fun switchTo(player: Player) {
-        _state.value = _state.value.copy(activePlayer = player)
+        val current = _state.value
+        val previousPlayer = current.activePlayer
+        // Apply increment to the player who just moved
+        val updatedState = when (previousPlayer) {
+            Player.PLAYER_1 -> current.copy(
+                player1TimeSeconds = current.player1TimeSeconds + incrementSeconds
+            )
+            Player.PLAYER_2 -> current.copy(
+                player2TimeSeconds = current.player2TimeSeconds + incrementSeconds
+            )
+            else -> current
+        }
+        _state.value = updatedState.copy(activePlayer = player)
     }
-    
+
     fun tick() {
         val current = _state.value
         if (!current.isRunning || current.activePlayer == null) return
-        
+
         _state.value = when (current.activePlayer) {
             Player.PLAYER_1 -> current.copy(
                 player1TimeSeconds = (current.player1TimeSeconds - 1).coerceAtLeast(0)
@@ -59,7 +77,7 @@ class GameClock(
             else -> current
         }
     }
-    
+
     fun isTimeOut(): Player? {
         val current = _state.value
         return when {
@@ -68,17 +86,17 @@ class GameClock(
             else -> null
         }
     }
-    
-    fun reset(initialSeconds: Int = 300) {
+
+    fun reset(timeControl: TimeControl = TimeControl.DEFAULT) {
         timerJob?.cancel()
         _state.value = ClockState(
-            player1TimeSeconds = initialSeconds,
-            player2TimeSeconds = initialSeconds,
+            player1TimeSeconds = timeControl.totalSeconds,
+            player2TimeSeconds = timeControl.totalSeconds,
             isRunning = false,
             activePlayer = null
         )
     }
-    
+
     fun formatTime(seconds: Int): String {
         val mins = seconds / 60
         val secs = seconds % 60
