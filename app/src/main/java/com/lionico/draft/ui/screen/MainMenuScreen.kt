@@ -22,10 +22,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,7 +56,6 @@ import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.model.TimeControl
 import com.lionico.draft.ui.component.ClockSelectionSheet
 import com.lionico.draft.ui.component.FriendOptionsSheet
-import com.lionico.draft.ui.component.PlayerNameCard
 import com.lionico.draft.ui.component.PlayerNameDialog
 import com.lionico.draft.ui.component.SectionHeader
 import com.lionico.draft.ui.component.StatBadge
@@ -69,6 +71,7 @@ fun MainMenuScreen(
     onPlayVsFriend: (TimeControl) -> Unit,
     onPlayVsComputer: (TimeControl) -> Unit,
     onHistory: () -> Unit = {},
+    onSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: MainMenuViewModel = hiltViewModel()
 ) {
@@ -134,15 +137,15 @@ fun MainMenuScreen(
                             count = "44.2K",
                             label = stringResource(R.string.games_label)
                         )
+                        IconButton(onClick = onSettings) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
-            }
-
-            item {
-                PlayerNameCard(
-                    playerName = playerNames?.player1Name ?: stringResource(R.string.you),
-                    onEditClick = { showNameDialog = true }
-                )
             }
 
             item {
