@@ -44,8 +44,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lionico.draft.R
+import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.model.TimeControl
-import com.lionico.draft.ui.component.AIDifficultySheet
 import com.lionico.draft.ui.component.ClockSelectionSheet
 import com.lionico.draft.ui.component.FriendOptionsSheet
 import com.lionico.draft.ui.component.PlayerNameCard
@@ -71,13 +71,13 @@ fun MainMenuScreen(
     val scope = rememberCoroutineScope()
     var showNameDialog by remember { mutableStateOf(false) }
     var crashLog by remember { mutableStateOf("") }
-    // Clock selection flow
     var showClockSheet by remember { mutableStateOf(false) }
     var selectedClock by remember { mutableStateOf<TimeControl?>(null) }
-    var pendingMode by remember { mutableStateOf<String?>(null) } // "friend" or "computer"
+    var pendingMode by remember { mutableStateOf<String?>(null) }
     var showFriendOptions by remember { mutableStateOf(false) }
 
     val playerNames by viewModel.playerNames.collectAsStateWithLifecycle(initialValue = null)
+    val currentDifficulty by viewModel.difficulty.collectAsStateWithLifecycle(initialValue = Difficulty.MEDIUM)
 
     val showComingSoonToast: () -> Unit = {
         Toast.makeText(context, R.string.coming_soon, Toast.LENGTH_SHORT).show()
@@ -126,7 +126,6 @@ fun MainMenuScreen(
             )
         }
 
-        // Main play buttons
         item {
             SectionHeader(title = "Play")
         }
@@ -266,7 +265,6 @@ fun MainMenuScreen(
     }
     // --- END DEBUG ---
 
-    // Clock selection sheet
     if (showClockSheet) {
         ClockSelectionSheet(
             onSelect = { clock ->
@@ -286,7 +284,6 @@ fun MainMenuScreen(
         )
     }
 
-    // Friend options sheet (after clock selection)
     if (showFriendOptions && selectedClock != null) {
         FriendOptionsSheet(
             onSameDevice = {
@@ -307,15 +304,16 @@ fun MainMenuScreen(
         )
     }
 
-    // Name dialog
     if (showNameDialog && playerNames != null) {
         PlayerNameDialog(
             currentPlayer1Name = playerNames!!.player1Name,
             currentPlayer2Name = playerNames!!.player2Name,
+            currentDifficulty = currentDifficulty,
             isPlayerVsAI = false,
-            onConfirm = { name1, name2 ->
+            onConfirm = { name1, name2, difficulty ->
                 scope.launch {
                     viewModel.setPlayerNames(name1, name2)
+                    viewModel.setDifficulty(difficulty)
                 }
                 showNameDialog = false
             },
