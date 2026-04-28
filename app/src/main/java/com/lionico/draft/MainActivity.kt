@@ -91,8 +91,8 @@ fun AppNavigation() {
                     navController.navigate("replay/$gameId?mode=analysis")
                 },
                 onContinueVsAI = { gameId ->
-                    // For continue, default to a time control (could be stored in history)
-                    navController.navigate("game/player_vs_computer?timeControl=3+2&gameId=$gameId")
+                    // For continue, default to 3+2 (or first preset)
+                    navController.navigate("game/player_vs_computer?timeControl=${TimeControl.PRESETS.first().label()}&gameId=$gameId")
                 }
             )
         }
@@ -103,7 +103,7 @@ fun AppNavigation() {
                 navArgument("mode") { type = NavType.StringType },
                 navArgument("timeControl") {
                     type = NavType.StringType
-                    defaultValue = "3+2"
+                    defaultValue = TimeControl.PRESETS.first().label()
                 },
                 navArgument("gameId") {
                     type = NavType.LongType
@@ -112,7 +112,7 @@ fun AppNavigation() {
             )
         ) { backStackEntry ->
             val mode = backStackEntry.arguments?.getString("mode") ?: "player_vs_player"
-            val timeControlLabel = backStackEntry.arguments?.getString("timeControl") ?: "3+2"
+            val timeControlLabel = backStackEntry.arguments?.getString("timeControl") ?: TimeControl.PRESETS.first().label()
             val gameId = backStackEntry.arguments?.getLong("gameId") ?: -1L
 
             val gameMode = when (mode) {
@@ -121,7 +121,7 @@ fun AppNavigation() {
             }
 
             val timeControl = TimeControl.PRESETS.find { it.label() == timeControlLabel }
-                ?: TimeControl.DEFAULT // fallback
+                ?: TimeControl.PRESETS.first()
 
             GameScreen(
                 gameMode = gameMode,
