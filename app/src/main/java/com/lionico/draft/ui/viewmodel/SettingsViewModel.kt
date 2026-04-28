@@ -1,0 +1,56 @@
+package com.lionico.draft.ui.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.lionico.draft.data.ai.Difficulty
+import com.lionico.draft.data.datastore.PlayerPreferences
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val preferences: PlayerPreferences
+) : ViewModel() {
+
+    val player1Name = preferences.playerNames
+        .mapState { it.player1Name }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "You")
+
+    val player2Name = preferences.playerNames
+        .mapState { it.player2Name }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Opponent")
+
+    val difficulty = preferences.difficulty
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Difficulty.MEDIUM)
+
+    val soundEnabled = preferences.soundEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val hapticEnabled = preferences.hapticEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setPlayer1Name(name: String) {
+        viewModelScope.launch { preferences.setPlayer1Name(name) }
+    }
+
+    fun setPlayer2Name(name: String) {
+        viewModelScope.launch { preferences.setPlayer2Name(name) }
+    }
+
+    fun setDifficulty(difficulty: Difficulty) {
+        viewModelScope.launch { preferences.setDifficulty(difficulty) }
+    }
+
+    fun setSoundEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferences.setSoundEnabled(enabled) }
+    }
+
+    fun setHapticEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferences.setHapticEnabled(enabled) }
+    }
+
+    private fun <T, R> Flow<T>.mapState(transform: (T) -> R): Flow<R> = map(transform)
+}
