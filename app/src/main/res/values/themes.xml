@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- File: app/src/main/res/values/themes.xml -->
 <resources>
-    <!-- SplashScreen theme (REQUIRED for Android 12+) -->
+    <!-- SplashScreen theme -->
     <style name="Theme.Lionico.Draft.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@android:color/black</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenBackground">@android:color/transparent</item>
+        <item name="windowSplashScreenAnimatedIcon">@null</item>
         <item name="windowSplashScreenAnimationDuration">200</item>
-        <!-- Theme applied AFTER splash -->
-        <item name="postSplashScreenTheme">@style/Theme.Lionico.Draft</item>
+        <item name="postSplashScreenTheme">@style/Theme.Lionico.Draft.SplashImage</item>
     </style>
 
-    <!-- Main app theme -->
+    <!-- Theme applied right after splash – shows castle background -->
+    <style name="Theme.Lionico.Draft.SplashImage" parent="Theme.Lionico.Draft">
+        <item name="android:windowBackground">@drawable/castle_bg</item>
+    </style>
+
+    <!-- Main app theme (used after Compose draws) -->
     <style name="Theme.Lionico.Draft" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
