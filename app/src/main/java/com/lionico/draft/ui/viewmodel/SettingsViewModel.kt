@@ -6,6 +6,7 @@ import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.datastore.PlayerPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,11 +17,11 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     val player1Name = preferences.playerNames
-        .mapState { it.player1Name }
+        .map { it.player1Name }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "You")
 
     val player2Name = preferences.playerNames
-        .mapState { it.player2Name }
+        .map { it.player2Name }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Opponent")
 
     val difficulty = preferences.difficulty
@@ -51,6 +52,4 @@ class SettingsViewModel @Inject constructor(
     fun setHapticEnabled(enabled: Boolean) {
         viewModelScope.launch { preferences.setHapticEnabled(enabled) }
     }
-
-    private fun <T, R> Flow<T>.mapState(transform: (T) -> R): Flow<R> = map(transform)
 }
