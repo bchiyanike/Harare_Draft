@@ -22,6 +22,7 @@ import com.lionico.draft.ui.screen.GameScreen
 import com.lionico.draft.ui.screen.HistoryScreen
 import com.lionico.draft.ui.screen.MainMenuScreen
 import com.lionico.draft.ui.screen.ReplayScreen
+import com.lionico.draft.ui.screen.SettingsScreen
 import com.lionico.draft.ui.theme.LionicoTheme
 import com.lionico.draft.ui.viewmodel.GameMode
 import dagger.hilt.android.AndroidEntryPoint
@@ -77,7 +78,16 @@ fun AppNavigation() {
                 },
                 onHistory = {
                     navController.navigate("history")
+                },
+                onSettings = {
+                    navController.navigate("settings")
                 }
+            )
+        }
+
+        composable("settings") {
+            SettingsScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -91,7 +101,6 @@ fun AppNavigation() {
                     navController.navigate("replay/$gameId?mode=analysis")
                 },
                 onContinueVsAI = { gameId ->
-                    // For continue, default to 3+2 (or first preset)
                     navController.navigate("game/player_vs_computer?timeControl=${TimeControl.PRESETS.first().label()}&gameId=$gameId")
                 }
             )
