@@ -20,6 +20,9 @@ import com.lionico.draft.domain.usecase.CheckGameOverUseCase
 import com.lionico.draft.domain.usecase.ExecuteMoveUseCase
 import com.lionico.draft.domain.usecase.GetAIMoveUseCase
 import com.lionico.draft.domain.usecase.ValidateMoveUseCase
+import com.lionico.draft.ui.feedback.HapticManager
+import com.lionico.draft.ui.feedback.SoundManager
+import com.lionico.draft.ui.feedback.SoundType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -43,7 +46,9 @@ class GameViewModel @Inject constructor(
     private val checkGameOverUseCase: CheckGameOverUseCase,
     private val getAIMoveUseCase: GetAIMoveUseCase,
     private val playerPreferences: PlayerPreferences,
-    private val historyRepository: GameHistoryRepository
+    private val historyRepository: GameHistoryRepository,
+    private val soundManager: SoundManager,
+    private val hapticManager: HapticManager
 ) : ViewModel() {
 
     private val _boardState = MutableStateFlow(gameEngine.getBoard())
@@ -143,6 +148,9 @@ class GameViewModel @Inject constructor(
         if (piece?.player == _currentPlayer.value) {
             _selectedPosition.value = position
             _validMoves.value = validateMoveUseCase(position)
+            viewModelScope.launch { hapticManager.selectPiece() }
+        } else {
+            viewModelScope.launch { hapticManager.invalidTap() }
         }
     }
 
@@ -156,18 +164,40 @@ class GameViewModel @Inject constructor(
             if (piece?.player == _currentPlayer.value) {
                 selectPieceAt(to)
             } else {
+                viewModelScope.launch { hapticManager.invalidTap() }
                 clearSelection()
             }
         }
     }
 
     private fun executeMove(move: Move) {
+        val wasPromotion = move.isPromotion
+        val capturedPositions = move.captures
+
         val success = executeMoveUseCase(move)
         if (success) {
             updateUIState()
             clearSelection()
 
             gameClock.switchTo(_currentPlayer.value)
+
+            // Trigger feedback
+            viewModelScope.launch {
+                when {
+                    wasPromotion -> {
+                        soundManager.play(SoundType.PROMOTE)
+                        hapticManager.movePiece()
+                    }
+                    capturedPositions.isNotEmpty() -> {
+                        soundManager.play(SoundType.CAPTURE)
+                        hapticManager.capture()
+                    }
+                    else -> {
+                        soundManager.play(SoundType.MOVE)
+                        hapticManager.movePiece()
+                    }
+                }
+            }
 
             if (gameMode == GameMode.PLAYER_VS_COMPUTER &&
                 _currentPlayer.value == Player.PLAYER_2 &&
@@ -188,9 +218,29 @@ class GameViewModel @Inject constructor(
                 delay(300)
                 val move = getAIMoveUseCase(aiDifficulty)
                 if (move != Move.NONE) {
+                    val wasPromotion = move.isPromotion
+                    val capturedPositions = move.captures
+
                     executeMoveUseCase(move)
                     updateUIState()
                     gameClock.switchTo(_currentPlayer.value)
+
+                    // Trigger feedback for AI move too
+                    when {
+                        wasPromotion -> {
+                            soundManager.play(SoundType.PROMOTE)
+                            hapticManager.movePiece()
+                        }
+                        capturedPositions.isNotEmpty() -> {
+                            soundManager.play(SoundType.CAPTURE)
+                            hapticManager.capture()
+                        }
+                        else -> {
+                            soundManager.play(SoundType.MOVE)
+                            hapticManager.movePiece()
+                        }
+                    }
+
                     checkAndHandleGameOver()
                 }
             } finally {
@@ -215,6 +265,17 @@ class GameViewModel @Inject constructor(
         if (_gameStatus.value != GameStatus.ONGOING) {
             gameClock.pause()
             clockTickJob?.cancel()
+
+            // Play game-over sound
+            viewModelScope.launch {
+                when (_gameStatus.value) {
+                    GameStatus.PLAYER_1_WINS -> soundManager.play(SoundType.WIN)
+                    GameStatus.PLAYER_2_WINS -> soundManager.play(SoundType.LOSE)
+                    GameStatus.DRAW -> soundManager.play(SoundType.DRAW)
+                    else -> {}
+                }
+            }
+
             saveGameResult()
         }
     }
