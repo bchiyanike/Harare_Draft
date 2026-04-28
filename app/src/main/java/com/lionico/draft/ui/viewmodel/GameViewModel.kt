@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -104,7 +105,7 @@ class GameViewModel @Inject constructor(
 
         viewModelScope.launch {
             if (mode == GameMode.PLAYER_VS_COMPUTER) {
-                aiDifficulty = playerPreferences.difficulty.value ?: Difficulty.MEDIUM
+                aiDifficulty = playerPreferences.difficulty.first()
                 val aiName = PlayerPreferences.randomAIName(aiDifficulty)
                 _player2Name.value = aiName
                 playerPreferences.setPlayer2Name(aiName)
@@ -318,7 +319,7 @@ class GameViewModel @Inject constructor(
 
         gameMode = GameMode.PLAYER_VS_COMPUTER
         this.currentTimeControl = timeControl
-        aiDifficulty = playerPreferences.difficulty.value ?: Difficulty.MEDIUM
+        aiDifficulty = playerPreferences.difficulty.first()
 
         viewModelScope.launch {
             val aiName = PlayerPreferences.randomAIName(aiDifficulty)
