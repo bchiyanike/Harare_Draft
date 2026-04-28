@@ -13,7 +13,7 @@ data class ClockState(
 )
 
 class GameClock(
-    timeControl: TimeControl = TimeControl.DEFAULT
+    timeControl: TimeControl = TimeControl.PRESETS.first()
 ) {
     private val incrementSeconds = timeControl.incrementSeconds
 
@@ -87,7 +87,7 @@ class GameClock(
         }
     }
 
-    fun reset(timeControl: TimeControl = TimeControl.DEFAULT) {
+    fun reset(timeControl: TimeControl = TimeControl.PRESETS.first()) {
         timerJob?.cancel()
         _state.value = ClockState(
             player1TimeSeconds = timeControl.totalSeconds,
