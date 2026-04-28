@@ -4,6 +4,7 @@ package com.lionico.draft.data.datastore
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -29,6 +30,8 @@ class PlayerPreferences @Inject constructor(
         private val PLAYER_1_NAME = stringPreferencesKey("player_1_name")
         private val PLAYER_2_NAME = stringPreferencesKey("player_2_name")
         private val DIFFICULTY = stringPreferencesKey("difficulty")
+        private val SOUND_ENABLED = booleanPreferencesKey("sound_enabled")
+        private val HAPTIC_ENABLED = booleanPreferencesKey("haptic_enabled")
 
         val AI_NAMES_EASY = listOf("Mhofela", "Mukanya", "Mhukahuru")
         val AI_NAMES_MEDIUM = listOf("Mugabe", "Giribheti", "Tambaoga")
@@ -59,6 +62,14 @@ class PlayerPreferences @Inject constructor(
         }
     }
 
+    val soundEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[SOUND_ENABLED] ?: true
+    }
+
+    val hapticEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[HAPTIC_ENABLED] ?: true
+    }
+
     suspend fun setPlayer1Name(name: String) {
         context.dataStore.edit { prefs ->
             prefs[PLAYER_1_NAME] = name
@@ -74,6 +85,18 @@ class PlayerPreferences @Inject constructor(
     suspend fun setDifficulty(difficulty: Difficulty) {
         context.dataStore.edit { prefs ->
             prefs[DIFFICULTY] = difficulty.name.lowercase()
+        }
+    }
+
+    suspend fun setSoundEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[SOUND_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setHapticEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[HAPTIC_ENABLED] = enabled
         }
     }
 
