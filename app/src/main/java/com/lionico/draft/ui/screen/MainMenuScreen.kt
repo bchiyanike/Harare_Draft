@@ -2,8 +2,10 @@
 package com.lionico.draft.ui.screen
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,7 +37,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -83,241 +88,256 @@ fun MainMenuScreen(
         Toast.makeText(context, R.string.coming_soon, Toast.LENGTH_SHORT).show()
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = stringResource(R.string.app_name),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Row {
-                    StatBadge(
-                        icon = Icons.Default.Person,
-                        count = "105.9K",
-                        label = stringResource(R.string.players_label)
+    Box(modifier = modifier.fillMaxSize()) {
+        // Background image
+        Image(
+            painter = painterResource(id = R.drawable.castle_bg),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        // Scrim
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f))
+        )
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    StatBadge(
-                        icon = Icons.Default.Group,
-                        count = "44.2K",
-                        label = stringResource(R.string.games_label)
+                    Row {
+                        StatBadge(
+                            icon = Icons.Default.Person,
+                            count = "105.9K",
+                            label = stringResource(R.string.players_label)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        StatBadge(
+                            icon = Icons.Default.Group,
+                            count = "44.2K",
+                            label = stringResource(R.string.games_label)
+                        )
+                    }
+                }
+            }
+
+            item {
+                PlayerNameCard(
+                    playerName = playerNames?.player1Name ?: stringResource(R.string.you),
+                    onEditClick = { showNameDialog = true }
+                )
+            }
+
+            item {
+                SectionHeader(title = "Play")
+            }
+            item {
+                Button(
+                    onClick = {
+                        pendingMode = "friend"
+                        showClockSheet = true
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Play with a Friend",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
+            item {
+                Button(
+                    onClick = {
+                        pendingMode = "computer"
+                        showClockSheet = true
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Play with the Computer",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            item {
+                SectionHeader(title = stringResource(R.string.live_now))
+            }
+
+            items(sampleStreams) { stream ->
+                StreamCard(stream, onClick = showComingSoonToast)
+            }
+
+            item {
+                Button(
+                    onClick = showComingSoonToast,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.create_game),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            item {
+                Button(
+                    onClick = onHistory,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Game History",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            // --- DEBUG: Crash log viewer — remove before release ---
+            item {
+                Button(
+                    onClick = {
+                        val file = File(context.filesDir, "crash_log.txt")
+                        crashLog = if (file.exists()) file.readText() else "No crash log found."
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Show Crash Log (Debug)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            // --- END DEBUG ---
         }
 
-        item {
-            PlayerNameCard(
-                playerName = playerNames?.player1Name ?: stringResource(R.string.you),
-                onEditClick = { showNameDialog = true }
+        // --- DEBUG: Crash log dialog — remove before release ---
+        if (crashLog.isNotEmpty()) {
+            AlertDialog(
+                onDismissRequest = { crashLog = "" },
+                confirmButton = {
+                    TextButton(onClick = { crashLog = "" }) {
+                        Text("Close")
+                    }
+                },
+                title = { Text("Crash Log") },
+                text = {
+                    Text(
+                        text = crashLog,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 10.sp,
+                        modifier = Modifier.verticalScroll(rememberScrollState())
+                    )
+                }
+            )
+        }
+        // --- END DEBUG ---
+
+        if (showClockSheet) {
+            ClockSelectionSheet(
+                onSelect = { clock ->
+                    showClockSheet = false
+                    selectedClock = clock
+                    if (pendingMode == "friend") {
+                        showFriendOptions = true
+                    } else if (pendingMode == "computer") {
+                        onPlayVsComputer(clock)
+                    }
+                    pendingMode = null
+                },
+                onDismiss = {
+                    showClockSheet = false
+                    pendingMode = null
+                }
             )
         }
 
-        item {
-            SectionHeader(title = "Play")
-        }
-        item {
-            Button(
-                onClick = {
-                    pendingMode = "friend"
-                    showClockSheet = true
+        if (showFriendOptions && selectedClock != null) {
+            FriendOptionsSheet(
+                onSameDevice = {
+                    showFriendOptions = false
+                    onPlayVsFriend(selectedClock!!)
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = "Play with a Friend",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-        item {
-            Button(
-                onClick = {
-                    pendingMode = "computer"
-                    showClockSheet = true
+                onBluetooth = {
+                    showFriendOptions = false
+                    showComingSoonToast()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = "Play with the Computer",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
-        item {
-            SectionHeader(title = stringResource(R.string.live_now))
-        }
-
-        items(sampleStreams) { stream ->
-            StreamCard(stream, onClick = showComingSoonToast)
-        }
-
-        item {
-            Button(
-                onClick = showComingSoonToast,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.create_game),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
-        item {
-            Button(
-                onClick = onHistory,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = "Game History",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-
-        // --- DEBUG: Crash log viewer — remove before release ---
-        item {
-            Button(
-                onClick = {
-                    val file = File(context.filesDir, "crash_log.txt")
-                    crashLog = if (file.exists()) file.readText() else "No crash log found."
+                onOnline = {
+                    showFriendOptions = false
+                    showComingSoonToast()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = "Show Crash Log (Debug)",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+                onDismiss = {
+                    showFriendOptions = false
+                }
+            )
         }
-        // --- END DEBUG ---
-    }
 
-    // --- DEBUG: Crash log dialog — remove before release ---
-    if (crashLog.isNotEmpty()) {
-        AlertDialog(
-            onDismissRequest = { crashLog = "" },
-            confirmButton = {
-                TextButton(onClick = { crashLog = "" }) {
-                    Text("Close")
-                }
-            },
-            title = { Text("Crash Log") },
-            text = {
-                Text(
-                    text = crashLog,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 10.sp,
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                )
-            }
-        )
-    }
-    // --- END DEBUG ---
-
-    if (showClockSheet) {
-        ClockSelectionSheet(
-            onSelect = { clock ->
-                showClockSheet = false
-                selectedClock = clock
-                if (pendingMode == "friend") {
-                    showFriendOptions = true
-                } else if (pendingMode == "computer") {
-                    onPlayVsComputer(clock)
-                }
-                pendingMode = null
-            },
-            onDismiss = {
-                showClockSheet = false
-                pendingMode = null
-            }
-        )
-    }
-
-    if (showFriendOptions && selectedClock != null) {
-        FriendOptionsSheet(
-            onSameDevice = {
-                showFriendOptions = false
-                onPlayVsFriend(selectedClock!!)
-            },
-            onBluetooth = {
-                showFriendOptions = false
-                showComingSoonToast()
-            },
-            onOnline = {
-                showFriendOptions = false
-                showComingSoonToast()
-            },
-            onDismiss = {
-                showFriendOptions = false
-            }
-        )
-    }
-
-    if (showNameDialog && playerNames != null) {
-        PlayerNameDialog(
-            currentPlayer1Name = playerNames!!.player1Name,
-            currentPlayer2Name = playerNames!!.player2Name,
-            currentDifficulty = currentDifficulty,
-            isPlayerVsAI = false,
-            onConfirm = { name1, name2, difficulty ->
-                scope.launch {
-                    viewModel.setPlayerNames(name1, name2)
-                    viewModel.setDifficulty(difficulty)
-                }
-                showNameDialog = false
-            },
-            onDismiss = { showNameDialog = false }
-        )
+        if (showNameDialog && playerNames != null) {
+            PlayerNameDialog(
+                currentPlayer1Name = playerNames!!.player1Name,
+                currentPlayer2Name = playerNames!!.player2Name,
+                currentDifficulty = currentDifficulty,
+                isPlayerVsAI = false,
+                onConfirm = { name1, name2, difficulty ->
+                    scope.launch {
+                        viewModel.setPlayerNames(name1, name2)
+                        viewModel.setDifficulty(difficulty)
+                    }
+                    showNameDialog = false
+                },
+                onDismiss = { showNameDialog = false }
+            )
+        }
     }
 }
