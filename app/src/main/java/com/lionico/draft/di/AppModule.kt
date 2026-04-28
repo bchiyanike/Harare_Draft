@@ -2,6 +2,9 @@
 package com.lionico.draft.di
 
 import android.content.Context
+import android.os.Build
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.room.Room
 import com.lionico.draft.data.ai.AIPlayer
 import com.lionico.draft.data.datastore.PlayerPreferences
@@ -13,6 +16,8 @@ import com.lionico.draft.domain.usecase.CheckGameOverUseCase
 import com.lionico.draft.domain.usecase.ExecuteMoveUseCase
 import com.lionico.draft.domain.usecase.GetAIMoveUseCase
 import com.lionico.draft.domain.usecase.ValidateMoveUseCase
+import com.lionico.draft.ui.feedback.HapticManager
+import com.lionico.draft.ui.feedback.SoundManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -86,4 +91,30 @@ object AppModule {
     @Singleton
     fun provideGameHistoryRepository(dao: GameHistoryDao): GameHistoryRepository =
         GameHistoryRepository(dao)
+
+    // --- Sound & Haptic ---
+
+    @Provides
+    @Singleton
+    fun provideSoundManager(
+        @ApplicationContext context: Context,
+        preferences: PlayerPreferences
+    ): SoundManager = SoundManager(context, preferences)
+
+    @Provides
+    @Singleton
+    fun provideHapticManager(
+        @ApplicationContext context: Context,
+        preferences: PlayerPreferences
+    ): HapticManager = HapticManager(context, preferences)
+
+    @Provides
+    fun provideVibrator(@ApplicationContext context: Context): Vibrator =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = context.getSystemService(VibratorManager::class.java)
+            manager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
 }
