@@ -171,8 +171,8 @@ class GameViewModel @Inject constructor(
     }
 
     private fun executeMove(move: Move) {
-        val wasPromotion = move.isPromotion
-        val capturedPositions = move.captures
+        val wasPromotion = move.promotedToKing
+        val capturedPositions = move.capturedPositions
 
         val success = executeMoveUseCase(move)
         if (success) {
@@ -218,8 +218,8 @@ class GameViewModel @Inject constructor(
                 delay(300)
                 val move = getAIMoveUseCase(aiDifficulty)
                 if (move != Move.NONE) {
-                    val wasPromotion = move.isPromotion
-                    val capturedPositions = move.captures
+                    val wasPromotion = move.promotedToKing
+                    val capturedPositions = move.capturedPositions
 
                     executeMoveUseCase(move)
                     updateUIState()
