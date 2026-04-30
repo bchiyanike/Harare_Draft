@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.lionico.draft.R
 import com.lionico.draft.data.model.GameStatus
+import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.TimeControl
 import com.lionico.draft.ui.component.BoardView
 import com.lionico.draft.ui.component.ClockView
@@ -36,6 +37,8 @@ fun GameScreen(
     gameMode: GameMode,
     timeControl: TimeControl,
     gameId: Long? = null,
+    continueMoveIndex: Int? = null,
+    humanSide: Player? = null,
     onNavigateBack: () -> Unit,
     viewModel: GameViewModel = hiltViewModel()
 ) {
@@ -51,8 +54,10 @@ fun GameScreen(
     val player2Name by viewModel.player2Name.collectAsState()
     val pieceCounts = viewModel.getPieceCounts()
 
-    LaunchedEffect(gameMode, timeControl, gameId) {
-        if (gameId != null) {
+    LaunchedEffect(gameMode, timeControl, gameId, continueMoveIndex, humanSide) {
+        if (gameId != null && continueMoveIndex != null && humanSide != null) {
+            viewModel.continueFromPosition(gameId, continueMoveIndex, humanSide, timeControl)
+        } else if (gameId != null) {
             viewModel.continueFromGame(gameId, timeControl)
         } else {
             viewModel.startGame(gameMode, timeControl)
