@@ -1,7 +1,6 @@
 // File: app/src/main/java/com/lionico/draft/ui/screen/HistoryScreen.kt
 package com.lionico.draft.ui.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,15 +13,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -30,13 +29,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.lionico.draft.R
 import com.lionico.draft.data.model.GameResult
 import com.lionico.draft.ui.viewmodel.HistoryViewModel
 
@@ -44,22 +40,21 @@ import com.lionico.draft.ui.viewmodel.HistoryViewModel
 @Composable
 fun HistoryScreen(
     onNavigateBack: () -> Unit,
-    onReplay: (Long) -> Unit = {},
-    onAnalyze: (Long) -> Unit = {},
-    onContinueVsAI: (Long) -> Unit = {},
+    onReplay: (Long) -> Unit,
+    onAnalyze: (Long) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
-    val history by viewModel.history.collectAsState()
+    val games by viewModel.allGames.collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.history), fontWeight = FontWeight.Bold) },
+                title = { Text("Game History") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -70,33 +65,28 @@ fun HistoryScreen(
             )
         }
     ) { paddingValues ->
-        if (history.isEmpty()) {
+        if (games.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = stringResource(R.string.no_games_played),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("No games played yet", fontSize = 16.sp)
             }
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(history) { result ->
-                    HistoryCard(
-                        result = result,
-                        onReplay = onReplay,
-                        onAnalyze = onAnalyze,
-                        onContinueVsAI = onContinueVsAI
+                items(games, key = { it.id }) { game ->
+                    HistoryItem(
+                        game = game,
+                        onReplay = { onReplay(game.id) },
+                        onAnalyze = { onAnalyze(game.id) }
                     )
+                    HorizontalDivider(thickness = 0.5.dp)
                 }
             }
         }
@@ -104,91 +94,66 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun HistoryCard(
-    result: GameResult,
-    onReplay: (Long) -> Unit,
-    onAnalyze: (Long) -> Unit,
-    onContinueVsAI: (Long) -> Unit
+fun HistoryItem(
+    game: GameResult,
+    onReplay: () -> Unit,
+    onAnalyze: () -> Unit
 ) {
-    val isWin = result.winner == result.player1Name && result.winner != "Draw"
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        shape = RoundedCornerShape(12.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Column(
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "${game.player1Name} vs ${game.player2Name}",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+            Text(
+                text = game.winner,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Text(
+            text = "${game.timeControlLabel} · ${formatDuration(game.durationSeconds)}",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "${result.player1Name} vs ${result.player2Name}",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
+            Button(
+                onClick = onReplay,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
                 )
-                if (result.winner != "Draw") {
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = if (isWin) Color(0xFF4CAF50) else Color(0xFFF44336),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 12.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = if (isWin) stringResource(R.string.win) else stringResource(R.string.loss),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-                }
+            ) {
+                Text("Replay")
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = result.gameMode,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            Button(
+                onClick = onAnalyze,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiary
                 )
-                Text(
-                    text = "${result.formattedDate} ${result.formattedTime}",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Text(
-                text = "${stringResource(R.string.winner_label)}: ${result.winner}",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(onClick = { onReplay(result.id) }) {
-                    Text("Replay")
-                }
-                TextButton(onClick = { onAnalyze(result.id) }) {
-                    Text("Analysis")
-                }
-                TextButton(onClick = { onContinueVsAI(result.id) }) {
-                    Text("Continue vs AI")
-                }
+                Text("Analyze")
             }
         }
     }
+}
+
+private fun formatDuration(totalSeconds: Int): String {
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format("%d:%02d", minutes, seconds)
 }
