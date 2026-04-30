@@ -3,53 +3,52 @@ package com.lionico.draft.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.engine.Board
 import com.lionico.draft.data.engine.GameEngine
 import com.lionico.draft.data.model.GameMove
 import com.lionico.draft.data.model.GameResult
-import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.repository.GameHistoryRepository
-import com.lionico.draft.domain.usecase.GetAIMoveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class MoveEntry(
+    val index: Int,            // 1-based
+    val notation: String,      // e.g., "22-18"
+    val player: Player,
+    val isCurrent: Boolean
+)
+
 @HiltViewModel
 class ReplayViewModel @Inject constructor(
     private val gameEngine: GameEngine,
-    private val historyRepository: GameHistoryRepository,
-    private val getAIMoveUseCase: GetAIMoveUseCase
+    private val historyRepository: GameHistoryRepository
 ) : ViewModel() {
 
     private val _boardState = MutableStateFlow(Board())
     val boardState: StateFlow<Board> = _boardState.asStateFlow()
 
-    private val _currentMoveIndex = MutableStateFlow(-1)
+    private val _currentMoveIndex = MutableStateFlow(1) // start at move 1
     val currentMoveIndex: StateFlow<Int> = _currentMoveIndex.asStateFlow()
 
     private val _totalMoves = MutableStateFlow(0)
     val totalMoves: StateFlow<Int> = _totalMoves.asStateFlow()
 
-    private val _isPlaying = MutableStateFlow(false)
-    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
-
-    private val _analysisText = MutableStateFlow("")
-    val analysisText: StateFlow<String> = _analysisText.asStateFlow()
+    private val _moveList = MutableStateFlow<List<MoveEntry>>(emptyList())
+    val moveList: StateFlow<List<MoveEntry>> = _moveList.asStateFlow()
 
     private val _gameResult = MutableStateFlow<GameResult?>(null)
     val gameResult: StateFlow<GameResult?> = _gameResult.asStateFlow()
 
+    private val _analysisText = MutableStateFlow("Analysis on hold")
+    val analysisText: StateFlow<String> = _analysisText.asStateFlow()
+
     private var moves = emptyList<GameMove>()
-    private var boardStates = mutableListOf<Board>()
-    private var autoPlayJob: Job? = null
-    private var selectedTab: String = "replay"
+    private var boardStates = mutableListOf<Board>()  // index 0 = initial, index i = after move i
 
     fun loadGame(gameId: Long) {
         viewModelScope.launch {
@@ -58,143 +57,83 @@ class ReplayViewModel @Inject constructor(
             moves = GameMove.deserialize(result.movesJson)
             _totalMoves.value = moves.size
 
-            // Reconstruct all board states
+            // Reconstruct board states
             gameEngine.newGame()
             boardStates.clear()
-            boardStates.add(gameEngine.getBoard()) // initial state
+            boardStates.add(gameEngine.getBoard()) // initial
             for (move in moves) {
                 gameEngine.executeMove(GameMove.toDomainMove(move))
                 boardStates.add(gameEngine.getBoard())
             }
 
-            // Start at the end
-            goToMove(moves.size)
-            selectedTab = "replay"
-            runAnalysis()
+            // Generate move list notation (1-based index)
+            val entries = moves.mapIndexed { i: Int, gm: GameMove ->
+                val domainMove = GameMove.toDomainMove(gm)
+                MoveEntry(
+                    index = i + 1,
+                    notation = domainMove.toAlgebraicNotation(),
+                    player = gm.player,
+                    isCurrent = (i + 1) == 1 // first move is current initially
+                )
+            }
+            _moveList.value = entries
+
+            goToMove(1)
         }
     }
 
     fun setTab(tab: String) {
-        selectedTab = tab
-        if (tab == "analysis") {
-            runAnalysis()
-        }
+        // no-op for now, analysis tab placeholder
     }
 
-    private fun goToMove(index: Int) {
-        val clamped = index.coerceIn(0, moves.size)
+    fun goToMove(index: Int) {
+        val clamped = index.coerceIn(1, moves.size)
         _currentMoveIndex.value = clamped
+        // Update board from boardStates (index corresponds to state after that move)
         _boardState.value = boardStates[clamped]
+
+        // Update move list isCurrent flags
+        _moveList.value = _moveList.value.map { it.copy(isCurrent = it.index == clamped) }
     }
 
     fun previousMove() {
-        stopAutoPlay()
-        goToMove(_currentMoveIndex.value - 1)
+        if (_currentMoveIndex.value > 1) {
+            goToMove(_currentMoveIndex.value - 1)
+        }
     }
 
     fun nextMove() {
-        stopAutoPlay()
-        goToMove(_currentMoveIndex.value + 1)
-    }
-
-    fun toggleAutoPlay() {
-        if (_isPlaying.value) {
-            stopAutoPlay()
-        } else {
-            startAutoPlay()
+        if (_currentMoveIndex.value < moves.size) {
+            goToMove(_currentMoveIndex.value + 1)
         }
     }
 
-    private fun startAutoPlay() {
-        if (_currentMoveIndex.value == moves.size) {
-            goToMove(0)
-        }
-        _isPlaying.value = true
-        autoPlayJob?.cancel()
-        autoPlayJob = viewModelScope.launch {
-            while (_currentMoveIndex.value < moves.size) {
-                delay(1000)
-                goToMove(_currentMoveIndex.value + 1)
-            }
-            _isPlaying.value = false
-        }
+    /**
+     * Returns the game ID and move index to be used for continuing from this position.
+     * The calling screen will handle the side selection dialog.
+     */
+    fun getContinuePosition(): Pair<Long, Int>? {
+        val gameId = _gameResult.value?.id ?: return null
+        return Pair(gameId, _currentMoveIndex.value)
     }
 
-    private fun stopAutoPlay() {
-        autoPlayJob?.cancel()
-        _isPlaying.value = false
-    }
-
-    private fun runAnalysis() {
-        if (moves.isEmpty()) return
-        // Use the board state after the last move
-        val currentBoard = boardStates.last()
-        // Determine the player to move from the last stored move
-        val lastPlayer = moves.last().player
-        val playerToMove = lastPlayer.opponent()
-
-        // AI analyzes best move for the player whose turn it is
-        viewModelScope.launch {
-            gameEngine.loadPosition(currentBoard.copy(), playerToMove)
-            val bestMove = getAIMoveUseCase(Difficulty.HARD) // use hardest for analysis
-
-            if (bestMove != Move.NONE) {
-                // Analyze up to 3 half-moves (plies)
-                val moves = mutableListOf<Move>()
-                var board = currentBoard.copy()
-                var player = playerToMove
-
-                // 1st ply: best move for playerToMove
-                gameEngine.loadPosition(board.copy(), player)
-                val move1 = getAIMoveUseCase(Difficulty.HARD)
-                if (move1 != Move.NONE) {
-                    moves.add(move1)
-                    board = applyMoveToBoard(board, move1)
-                    player = player.opponent()
-
-                    // 2nd ply: best reply by opponent
-                    gameEngine.loadPosition(board.copy(), player)
-                    val move2 = getAIMoveUseCase(Difficulty.HARD)
-                    if (move2 != Move.NONE) {
-                        moves.add(move2)
-                        board = applyMoveToBoard(board, move2)
-                        player = player.opponent()
-
-                        // 3rd ply: best response by playerToMove
-                        gameEngine.loadPosition(board.copy(), player)
-                        val move3 = getAIMoveUseCase(Difficulty.HARD)
-                        if (move3 != Move.NONE) {
-                            moves.add(move3)
-                        }
-                    }
-                }
-
-                _analysisText.value = formatAnalysis(moves, playerToMove)
-            } else {
-                _analysisText.value = "No moves available"
-            }
+    /**
+     * Returns which player's turn it is at the current replay position.
+     */
+    fun getCurrentTurnPlayer(): Player {
+        // After move `index`, the turn switches. So we look at the move at index to see
+        // who moved, and the opponent is now to move.
+        if (_currentMoveIndex.value == 0) return Player.PLAYER_1 // should not happen
+        val moveIndex = _currentMoveIndex.value - 1 // 0-based index
+        if (moveIndex < moves.size) {
+            val playerWhoMoved = moves[moveIndex].player
+            return playerWhoMoved.opponent()
         }
-    }
-
-    private fun applyMoveToBoard(board: Board, move: Move): Board {
-        val b = board.copy()
-        b.setPieceAt(move.from, null)
-        move.capturedPositions.forEach { b.setPieceAt(it, null) }
-        val piece = board.getPieceAt(move.from)?.let {
-            if (move.promotedToKing) it.copy(type = com.lionico.draft.data.model.PieceType.KING) else it
-        }
-        b.setPieceAt(move.to, piece)
-        return b
-    }
-
-    private fun formatAnalysis(moves: List<Move>, playerToMove: Player): String {
-        if (moves.isEmpty()) return "No moves"
-        val notation = moves.joinToString(", then ") { move -> move.toAlgebraicNotation() }
-        return "Best: $notation"
+        // If at the end, the game is over; no current player. Return the last player's opponent (not critical).
+        return moves.last().player.opponent()
     }
 
     private fun Move.toAlgebraicNotation(): String {
-        // Convert to draughts square numbering 1-32 (dark squares only, row-major)
         val fromNum = positionToSquare(from)
         val toNum = positionToSquare(to)
         val sep = if (isCapture) "×" else "-"
@@ -202,14 +141,10 @@ class ReplayViewModel @Inject constructor(
     }
 
     private fun positionToSquare(pos: com.lionico.draft.data.model.Position): Int {
-        // Dark squares are numbered 1-32, row-major, starting from top-left (row 0)
-        // Square number = (row * 4) + (col / 2) + 1  for dark squares
-        // Since only dark squares are playable, col is always odd, so col/2 integer division works
         return (pos.row * 4) + (pos.col / 2) + 1
     }
 
     override fun onCleared() {
         super.onCleared()
-        autoPlayJob?.cancel()
     }
 }
