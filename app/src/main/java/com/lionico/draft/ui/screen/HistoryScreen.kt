@@ -29,10 +29,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.lionico.draft.R
 import com.lionico.draft.data.model.GameResult
 import com.lionico.draft.ui.viewmodel.HistoryViewModel
 
@@ -44,17 +46,17 @@ fun HistoryScreen(
     onAnalyze: (Long) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
-    val games by viewModel.allGames.collectAsState(initial = emptyList())
+    val games by viewModel.history.collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Game History") },
+                title = { Text(stringResource(R.string.game_history_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -72,7 +74,7 @@ fun HistoryScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No games played yet", fontSize = 16.sp)
+                Text(stringResource(R.string.no_games_played), fontSize = 16.sp)
             }
         } else {
             LazyColumn(
@@ -137,7 +139,7 @@ fun HistoryItem(
                     containerColor = MaterialTheme.colorScheme.secondary
                 )
             ) {
-                Text("Replay")
+                Text(stringResource(R.string.replay_button))
             }
             Button(
                 onClick = onAnalyze,
@@ -146,7 +148,7 @@ fun HistoryItem(
                     containerColor = MaterialTheme.colorScheme.tertiary
                 )
             ) {
-                Text("Analyze")
+                Text(stringResource(R.string.analyze_button))
             }
         }
     }
