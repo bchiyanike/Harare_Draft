@@ -13,6 +13,18 @@ val Player2PieceColor = Color(0xFF1976D2)    // Blue for top player
 val ValidMoveHighlight = Color(0xFF4CAF50).copy(alpha = 0.4f)  // Green with transparency
 val SelectedPieceBorder = Color(0xFFFFD700)  // Gold for selected piece
 
+// Analysis arrows
+val PlayedArrowColor = Color(0xFF00BCD4)     // Cyan for the move actually played
+val BestArrowColor = Color(0xFF4CAF50)       // Green for AI's best suggested move
+
+// Move list styling (used in ReplayScreen)
+val MovePlayedColor = Color.White.copy(alpha = 0.4f)   // dimmed for played moves
+val MoveUpcomingColor = Color.White.copy(alpha = 0.9f) // upcoming, nearly full white
+val MoveCurrentBg = Color(0xFFFFD54F).copy(alpha = 0.3f) // soft yellow highlight
+val MoveCurrentText = Color.White
+val RedSideColor = Color(0xFFD32F2F)   // serious red
+val BlackSideColor = Color(0xFF424242) // serious dark grey/black
+
 val LightColorScheme = lightColorScheme(
     primary = Color(0xFF6750A4),
     onPrimary = Color(0xFFFFFFFF),
