@@ -2,8 +2,8 @@
 <!-- File: app/src/main/res/values/strings.xml -->
 <resources>
     <!-- App Name -->
-    <string name="app_name">African Draughts</string>
-    <string name="tagline">Classic Strategy Board Game</string>
+    <string name="app_name">King Slayer PvP Draft</string>
+    <string name="tagline">Find the move others miss</string>
 
     <!-- Main Menu -->
     <string name="play_vs_player">Player vs Player</string>
