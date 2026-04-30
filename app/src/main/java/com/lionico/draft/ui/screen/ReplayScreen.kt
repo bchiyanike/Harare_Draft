@@ -61,6 +61,7 @@ import com.lionico.draft.ui.theme.MoveUpcomingColor
 import com.lionico.draft.ui.theme.RedSideColor
 import com.lionico.draft.ui.viewmodel.MoveEntry
 import com.lionico.draft.ui.viewmodel.ReplayViewModel
+import com.lionico.draft.ui.component.Arrow
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,6 +79,8 @@ fun ReplayScreen(
     val moveList by viewModel.moveList.collectAsState()
     val gameResult by viewModel.gameResult.collectAsState()
     val analysisText by viewModel.analysisText.collectAsState()
+    val playedArrow by viewModel.playedArrow.collectAsState()
+    val bestArrow by viewModel.bestArrow.collectAsState()
 
     var selectedTab by remember { mutableStateOf(if (initialMode == "analysis") "analysis" else "replay") }
     var showSidePicker by remember { mutableStateOf(false) }
@@ -89,7 +92,12 @@ fun ReplayScreen(
         viewModel.loadGame(gameId)
     }
 
-    // Auto-scroll to current move whenever it changes
+    // Inform ViewModel when tab changes to trigger analysis
+    LaunchedEffect(selectedTab) {
+        viewModel.setTab(selectedTab)
+    }
+
+    // Auto-scroll to current move
     LaunchedEffect(currentMoveIndex) {
         if (currentMoveIndex in 1..totalMoves) {
             listState.animateScrollToItem(currentMoveIndex - 1)
@@ -103,7 +111,7 @@ fun ReplayScreen(
                 delay(1000)
                 viewModel.nextMove()
             }
-            isAutoPlaying = false // stop when we reach the end
+            isAutoPlaying = false
         }
     }
 
@@ -119,7 +127,7 @@ fun ReplayScreen(
                         onClick = {
                             showSidePicker = false
                             viewModel.getContinuePosition()?.let { (id, idx) ->
-                                onContinueWithAI(id, idx, Player.PLAYER_1) // Red
+                                onContinueWithAI(id, idx, Player.PLAYER_1)
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = RedSideColor)
@@ -130,7 +138,7 @@ fun ReplayScreen(
                         onClick = {
                             showSidePicker = false
                             viewModel.getContinuePosition()?.let { (id, idx) ->
-                                onContinueWithAI(id, idx, Player.PLAYER_2) // Black
+                                onContinueWithAI(id, idx, Player.PLAYER_2)
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = BlackSideColor)
@@ -211,7 +219,6 @@ fun ReplayScreen(
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
-                    // Board on top, aspect ratio 1:1
                     BoardView(
                         board = boardState,
                         selectedPosition = null,
@@ -220,10 +227,10 @@ fun ReplayScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(1f)
-                            .padding(8.dp)
+                            .padding(8.dp),
+                        arrows = emptyList()  // no arrows in replay mode
                     )
 
-                    // Move counter
                     Text(
                         text = "${currentMoveIndex} / $totalMoves",
                         modifier = Modifier
@@ -234,7 +241,6 @@ fun ReplayScreen(
                         fontWeight = FontWeight.Medium
                     )
 
-                    // Moves list (scrollable)
                     LazyColumn(
                         state = listState,
                         modifier = Modifier
@@ -250,7 +256,6 @@ fun ReplayScreen(
                         }
                     }
 
-                    // Controls row (prev, auto‑play, next)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -280,7 +285,6 @@ fun ReplayScreen(
                         }
                     }
 
-                    // Continue vs AI button
                     Button(
                         onClick = { showSidePicker = true },
                         modifier = Modifier
@@ -295,7 +299,7 @@ fun ReplayScreen(
                 }
             }
             "analysis" -> {
-                // Placeholder analysis tab
+                val arrows = listOfNotNull(playedArrow, bestArrow)
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -311,7 +315,8 @@ fun ReplayScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(1f)
-                            .padding(8.dp)
+                            .padding(8.dp),
+                        arrows = arrows
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
