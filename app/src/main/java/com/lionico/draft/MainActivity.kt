@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.TimeControl
 import com.lionico.draft.ui.screen.DebugScreen
 import com.lionico.draft.ui.screen.GameScreen
@@ -99,15 +100,13 @@ fun AppNavigation() {
                 },
                 onAnalyze = { gameId ->
                     navController.navigate("replay/$gameId?mode=analysis")
-                },
-                onContinueVsAI = { gameId ->
-                    navController.navigate("game/player_vs_computer?timeControl=${TimeControl.PRESETS.first().label()}&gameId=$gameId")
                 }
+                // onContinueVsAI removed — now handled inside ReplayScreen
             )
         }
 
         composable(
-            route = "game/{mode}?timeControl={timeControl}&gameId={gameId}",
+            route = "game/{mode}?timeControl={timeControl}&gameId={gameId}&continueMoveIndex={continueMoveIndex}&humanSide={humanSide}",
             arguments = listOf(
                 navArgument("mode") { type = NavType.StringType },
                 navArgument("timeControl") {
@@ -117,12 +116,22 @@ fun AppNavigation() {
                 navArgument("gameId") {
                     type = NavType.LongType
                     defaultValue = -1L
+                },
+                navArgument("continueMoveIndex") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                },
+                navArgument("humanSide") {
+                    type = NavType.StringType
+                    defaultValue = ""
                 }
             )
         ) { backStackEntry ->
             val mode = backStackEntry.arguments?.getString("mode") ?: "player_vs_player"
             val timeControlLabel = backStackEntry.arguments?.getString("timeControl") ?: TimeControl.PRESETS.first().label()
             val gameId = backStackEntry.arguments?.getLong("gameId") ?: -1L
+            val continueMoveIndex = backStackEntry.arguments?.getInt("continueMoveIndex") ?: -1
+            val humanSideStr = backStackEntry.arguments?.getString("humanSide") ?: ""
 
             val gameMode = when (mode) {
                 "player_vs_computer" -> GameMode.PLAYER_VS_COMPUTER
@@ -132,10 +141,18 @@ fun AppNavigation() {
             val timeControl = TimeControl.PRESETS.find { it.label() == timeControlLabel }
                 ?: TimeControl.PRESETS.first()
 
+            val humanSide = when (humanSideStr) {
+                "PLAYER_1" -> Player.PLAYER_1
+                "PLAYER_2" -> Player.PLAYER_2
+                else -> null
+            }
+
             GameScreen(
                 gameMode = gameMode,
                 timeControl = timeControl,
                 gameId = gameId.takeIf { it != -1L },
+                continueMoveIndex = continueMoveIndex.takeIf { it != -1 },
+                humanSide = humanSide,
                 onNavigateBack = {
                     navController.popBackStack()
                 }
@@ -157,7 +174,17 @@ fun AppNavigation() {
             ReplayScreen(
                 gameId = gameId,
                 initialMode = mode,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onContinueWithAI = { continueGameId, moveIndex, humanSide ->
+                    // Navigate to game with continue params
+                    val timeControlLabel = TimeControl.PRESETS.first().label() // default time control
+                    navController.navigate(
+                        "game/player_vs_computer?timeControl=$timeControlLabel" +
+                                "&gameId=$continueGameId" +
+                                "&continueMoveIndex=$moveIndex" +
+                                "&humanSide=${humanSide.name}"
+                    )
+                }
             )
         }
     }
