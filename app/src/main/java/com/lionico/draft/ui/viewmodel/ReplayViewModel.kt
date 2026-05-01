@@ -1,8 +1,10 @@
 // File: app/src/main/java/com/lionico/draft/ui/viewmodel/ReplayViewModel.kt
 package com.lionico.draft.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lionico.draft.R
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.engine.Board
 import com.lionico.draft.data.engine.GameEngine
@@ -10,12 +12,14 @@ import com.lionico.draft.data.model.GameMove
 import com.lionico.draft.data.model.GameResult
 import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.Player
+import com.lionico.draft.data.model.Position
 import com.lionico.draft.data.repository.GameHistoryRepository
 import com.lionico.draft.domain.usecase.GetAIMoveUseCase
 import com.lionico.draft.ui.component.Arrow
 import com.lionico.draft.ui.theme.BestArrowColor
 import com.lionico.draft.ui.theme.PlayedArrowColor
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -37,7 +41,8 @@ data class MoveEntry(
 class ReplayViewModel @Inject constructor(
     private val gameEngine: GameEngine,
     private val historyRepository: GameHistoryRepository,
-    private val getAIMoveUseCase: GetAIMoveUseCase
+    private val getAIMoveUseCase: GetAIMoveUseCase,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val _boardState = MutableStateFlow(Board())
@@ -58,7 +63,6 @@ class ReplayViewModel @Inject constructor(
     private val _analysisText = MutableStateFlow("")
     val analysisText: StateFlow<String> = _analysisText.asStateFlow()
 
-    // Arrows for played move and best AI move
     private val _playedArrow = MutableStateFlow<Arrow?>(null)
     val playedArrow: StateFlow<Arrow?> = _playedArrow.asStateFlow()
 
@@ -76,7 +80,6 @@ class ReplayViewModel @Inject constructor(
             moves = GameMove.deserialize(result.movesJson)
             _totalMoves.value = moves.size
 
-            // Reconstruct board states
             gameEngine.newGame()
             boardStates.clear()
             boardStates.add(gameEngine.getBoard())
@@ -85,7 +88,6 @@ class ReplayViewModel @Inject constructor(
                 boardStates.add(gameEngine.getBoard())
             }
 
-            // Generate move list notation
             val entries = moves.mapIndexed { i, gm ->
                 val domainMove = GameMove.toDomainMove(gm)
                 MoveEntry(
@@ -116,7 +118,6 @@ class ReplayViewModel @Inject constructor(
 
         _moveList.value = _moveList.value.map { it.copy(isCurrent = it.index == clamped) }
 
-        // Update analysis for the new position
         runAnalysis()
     }
 
@@ -149,39 +150,33 @@ class ReplayViewModel @Inject constructor(
     private fun runAnalysis() {
         cancelAnalysis()
 
-        // Need at least one move to analyze the position after it.
         val index = _currentMoveIndex.value
         if (index < 1 || index > moves.size) return
 
-        // The board state after this move, and the player to move next.
         val board = boardStates[index].copy()
         val playerToMove = if (index <= moves.size) moves[index - 1].player.opponent() else Player.PLAYER_1
 
-        // Build the arrow for the move that was actually played.
-        val nextMoveIndex = index  // move that was just performed
         var playedMoveArrow: Arrow? = null
-        if (nextMoveIndex < moves.size) {
-            val played = GameMove.toDomainMove(moves[nextMoveIndex])
+        if (index < moves.size) {
+            val played = GameMove.toDomainMove(moves[index])
             playedMoveArrow = Arrow(
                 from = played.from,
                 to = played.to,
                 color = PlayedArrowColor,
-                lengthFactor = 0.85f  // slightly shorter so the best arrow can be shown longer
+                lengthFactor = 0.85f
             )
         }
         _playedArrow.value = playedMoveArrow
 
         analysisJob = viewModelScope.launch(Dispatchers.Default) {
-            _analysisText.value = "Thinking…"
+            _analysisText.value = appContext.getString(R.string.analysis_thinking)
             _bestArrow.value = null
 
             try {
-                // Set up engine for the current position
                 gameEngine.loadPosition(board, playerToMove)
 
-                // Search best move at depth 12 (HARD difficulty)
                 val best = withContext(Dispatchers.Default) {
-                    getAIMoveUseCase(Difficulty.HARD) // uses depth 12 internally
+                    getAIMoveUseCase(Difficulty.HARD)
                 }
 
                 if (best != Move.NONE) {
@@ -191,13 +186,16 @@ class ReplayViewModel @Inject constructor(
                         color = BestArrowColor,
                         lengthFactor = 1.0f
                     )
-                    _analysisText.value = "Best: ${best.toAlgebraicNotation()}"
+                    _analysisText.value = appContext.getString(
+                        R.string.analysis_best_move,
+                        best.toAlgebraicNotation()
+                    )
                 } else {
-                    _analysisText.value = "No moves available"
+                    _analysisText.value = appContext.getString(R.string.analysis_no_moves)
                     _bestArrow.value = null
                 }
             } catch (e: Exception) {
-                _analysisText.value = "Analysis error"
+                _analysisText.value = appContext.getString(R.string.analysis_error)
             }
         }
     }
@@ -210,14 +208,16 @@ class ReplayViewModel @Inject constructor(
     }
 
     private fun Move.toAlgebraicNotation(): String {
-        val fromNum = positionToSquare(from)
-        val toNum = positionToSquare(to)
-        val sep = if (isCapture) "×" else "-"
-        return "$fromNum$sep$toNum"
+        val fromSquare = positionToAlgebraic(from)
+        val toSquare = positionToAlgebraic(to)
+        val sep = if (isCapture) "x" else "-"
+        return "$fromSquare$sep$toSquare"
     }
 
-    private fun positionToSquare(pos: com.lionico.draft.data.model.Position): Int {
-        return (pos.row * 4) + (pos.col / 2) + 1
+    private fun positionToAlgebraic(pos: Position): String {
+        val file = 'a' + pos.col
+        val rank = '1' + (7 - pos.row)
+        return "$file$rank"
     }
 
     override fun onCleared() {
