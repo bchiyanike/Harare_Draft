@@ -1,8 +1,10 @@
 // File: app/src/main/java/com/lionico/draft/ui/viewmodel/GameViewModel.kt
 package com.lionico.draft.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lionico.draft.R
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.datastore.PlayerPreferences
 import com.lionico.draft.data.engine.Board
@@ -24,12 +26,12 @@ import com.lionico.draft.ui.feedback.HapticManager
 import com.lionico.draft.ui.feedback.SoundManager
 import com.lionico.draft.ui.feedback.SoundType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.random.Random
@@ -49,7 +51,8 @@ class GameViewModel @Inject constructor(
     private val playerPreferences: PlayerPreferences,
     private val historyRepository: GameHistoryRepository,
     private val soundManager: SoundManager,
-    private val hapticManager: HapticManager
+    private val hapticManager: HapticManager,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val _boardState = MutableStateFlow(gameEngine.getBoard())
@@ -83,7 +86,7 @@ class GameViewModel @Inject constructor(
     private var aiDifficulty = Difficulty.MEDIUM
     private var currentTimeControl = TimeControl.PRESETS.last()
     private var gameStartTime = 0L
-    private var aiPlayer: Player? = null  // which Player slot (PLAYER_1 or PLAYER_2) is AI
+    private var aiPlayer: Player? = null
 
     private val gameClock = GameClock()
     val clockState = gameClock.state
@@ -102,10 +105,6 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Start a new game with the chosen mode and time control.
-     * Randomly assigns Red side for both friend and AI modes.
-     */
     fun startGame(mode: GameMode, timeControl: TimeControl) {
         this.gameMode = mode
         this.currentTimeControl = timeControl
@@ -115,9 +114,7 @@ class GameViewModel @Inject constructor(
             if (mode == GameMode.PLAYER_VS_COMPUTER) {
                 aiDifficulty = playerPreferences.difficulty.first()
                 val aiName = PlayerPreferences.randomAIName(aiDifficulty)
-                // Human name is player1Name initially
                 val humanName = names.player1Name
-                // Randomly assign Red to human or AI
                 val humanIsRed = Random.nextBoolean()
                 if (humanIsRed) {
                     _player1Name.value = humanName
@@ -128,10 +125,8 @@ class GameViewModel @Inject constructor(
                     _player2Name.value = humanName
                     aiPlayer = Player.PLAYER_1
                 }
-                // Persist AI name as player2 name so replay shows it correctly
                 playerPreferences.setPlayer2Name(aiName)
             } else {
-                // PvP: randomly assign Red (PLAYER_1) to either player1 or player2
                 val player1IsRed = Random.nextBoolean()
                 if (player1IsRed) {
                     _player1Name.value = names.player1Name
@@ -143,28 +138,25 @@ class GameViewModel @Inject constructor(
                 aiPlayer = null
             }
             resetGame()
+
+            // If AI is assigned to the starting side (Red), trigger its move immediately.
+            if (aiPlayer != null && _currentPlayer.value == aiPlayer &&
+                _gameStatus.value == GameStatus.ONGOING) {
+                makeAIMove()
+            }
         }
     }
 
     fun onSquareClick(position: Position) {
         if (_isAIThinking.value) return
         if (_gameStatus.value != GameStatus.ONGOING) return
-
-        // Block human tap during AI turn
         if (aiPlayer != null && _currentPlayer.value == aiPlayer) return
 
         val selected = _selectedPosition.value
-
         when {
-            selected == null -> {
-                selectPieceAt(position)
-            }
-            selected == position -> {
-                clearSelection()
-            }
-            else -> {
-                tryMove(selected, position)
-            }
+            selected == null -> selectPieceAt(position)
+            selected == position -> clearSelection()
+            else -> tryMove(selected, position)
         }
     }
 
@@ -181,7 +173,6 @@ class GameViewModel @Inject constructor(
 
     private fun tryMove(from: Position, to: Position) {
         val move = _validMoves.value.find { it.from == from && it.to == to }
-
         if (move != null) {
             executeMove(move)
         } else {
@@ -203,7 +194,6 @@ class GameViewModel @Inject constructor(
         if (success) {
             updateUIState()
             clearSelection()
-
             gameClock.switchTo(_currentPlayer.value)
 
             viewModelScope.launch {
@@ -223,7 +213,6 @@ class GameViewModel @Inject constructor(
                 }
             }
 
-            // Check if AI should now move
             if (aiPlayer != null && _currentPlayer.value == aiPlayer &&
                 _gameStatus.value == GameStatus.ONGOING) {
                 makeAIMove()
@@ -376,20 +365,16 @@ class GameViewModel @Inject constructor(
                 } else {
                     _player2Name.value
                 }
-                "$playerName's Turn"
+                appContext.getString(R.string.game_status_turn, playerName)
             }
-            GameStatus.PLAYER_1_WINS -> "${_player1Name.value} Wins!"
-            GameStatus.PLAYER_2_WINS -> "${_player2Name.value} Wins!"
-            GameStatus.DRAW -> "Draw!"
+            GameStatus.PLAYER_1_WINS -> appContext.getString(R.string.game_status_player_wins, _player1Name.value)
+            GameStatus.PLAYER_2_WINS -> appContext.getString(R.string.game_status_player_wins, _player2Name.value)
+            GameStatus.DRAW -> appContext.getString(R.string.game_status_draw)
         }
     }
 
     fun getPieceCounts(): Pair<Int, Int> = gameEngine.getPieceCounts()
 
-    /**
-     * Load a previously saved game and set up to continue playing vs AI
-     * with the given time control.
-     */
     suspend fun continueFromGame(gameId: Long, timeControl: TimeControl) {
         val gameResult = historyRepository.getGameById(gameId) ?: return
         val moves = GameMove.deserialize(gameResult.movesJson)
@@ -424,13 +409,6 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Continue playing against AI from a specific position in a replayed game.
-     * @param gameId the original game ID
-     * @param moveIndex the 1‑based move index to resume from
-     * @param humanSide which side the human wants to play (PLAYER_1 or PLAYER_2)
-     * @param timeControl the time control for the new game
-     */
     suspend fun continueFromPosition(
         gameId: Long,
         moveIndex: Int,
@@ -440,9 +418,6 @@ class GameViewModel @Inject constructor(
         val gameResult = historyRepository.getGameById(gameId) ?: return
         val moves = GameMove.deserialize(gameResult.movesJson)
         gameEngine.newGame()
-        // Play moves up to (but not including) moveIndex? We want the position *after* the specified move.
-        // In replay, moveIndex counts the moves already played. So if moveIndex = 3, we've played moves 1,2,3.
-        // The current turn belongs to the opponent of the player who made move 3.
         for (i in 0 until moveIndex.coerceAtMost(moves.size)) {
             gameEngine.executeMove(GameMove.toDomainMove(moves[i]))
         }
@@ -452,12 +427,8 @@ class GameViewModel @Inject constructor(
         this.currentTimeControl = timeControl
         aiDifficulty = playerPreferences.difficulty.first()
 
-        // Determine AI side and set names
         val aiName = PlayerPreferences.randomAIName(aiDifficulty)
         if (humanSide == Player.PLAYER_1) {
-            // Human wants Red
-            _player1Name.value = gameResult.player1Name // assumes original player1Name is the human? Not necessarily.
-            // We'll use original names from the game for consistency
             _player1Name.value = gameResult.player1Name
             _player2Name.value = aiName
             aiPlayer = Player.PLAYER_2
@@ -479,7 +450,6 @@ class GameViewModel @Inject constructor(
         clearSelection()
         _isAIThinking.value = false
 
-        // If it's AI's turn now, trigger AI move
         if (gameEngine.getCurrentPlayer() == aiPlayer && _gameStatus.value == GameStatus.ONGOING) {
             makeAIMove()
         }
