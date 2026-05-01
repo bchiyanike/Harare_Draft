@@ -23,6 +23,7 @@ import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.Position
 import com.lionico.draft.ui.theme.DarkSquareColor
 import com.lionico.draft.ui.theme.LightSquareColor
+import com.lionico.draft.ui.theme.board_selected_square_highlight
 
 data class Arrow(
     val from: Position,
@@ -38,12 +39,17 @@ fun BoardView(
     validMoves: List<Move>,
     onSquareClick: (Position) -> Unit,
     modifier: Modifier = Modifier,
-    arrows: List<Arrow> = emptyList()
+    arrows: List<Arrow> = emptyList(),
+    flipped: Boolean = false
 ) {
     val validMovePositions = validMoves.map { it.to }.toSet()
     val capturePathPositions = validMoves.flatMap { move ->
         move.capturedPositions
     }.toSet()
+
+    // Helper to flip a position around the centre of the board
+    fun flippedPosition(pos: Position): Position =
+        if (flipped) Position(7 - pos.row, 7 - pos.col) else pos
 
     BoxWithConstraints(
         modifier = modifier
@@ -53,13 +59,12 @@ fun BoardView(
         val squareSize = constraints.maxWidth / 8f
         val squareSizeDp = with(LocalDensity.current) { squareSize.toDp() }
 
-        // Arrows are drawn on a separate Canvas layer below pieces but above board
         if (arrows.isNotEmpty()) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 for (arrow in arrows) {
                     drawArrow(
-                        from = arrow.from,
-                        to = arrow.to,
+                        from = flippedPosition(arrow.from),
+                        to = flippedPosition(arrow.to),
                         color = arrow.color,
                         squareSize = squareSize,
                         lengthFactor = arrow.lengthFactor
@@ -69,33 +74,38 @@ fun BoardView(
         }
 
         Canvas(modifier = Modifier.fillMaxSize()) {
-            for (row in 0..7) {
-                for (col in 0..7) {
-                    val isDark = (row + col) % 2 != 0
+            for (displayRow in 0..7) {
+                for (displayCol in 0..7) {
+                    val boardRow = if (flipped) 7 - displayRow else displayRow
+                    val boardCol = if (flipped) 7 - displayCol else displayCol
+                    val isDark = (boardRow + boardCol) % 2 != 0
                     val color = if (isDark) DarkSquareColor else LightSquareColor
 
                     drawRect(
                         color = color,
-                        topLeft = Offset(col * squareSize, row * squareSize),
+                        topLeft = Offset(displayCol * squareSize, displayRow * squareSize),
                         size = androidx.compose.ui.geometry.Size(squareSize, squareSize)
                     )
                 }
             }
 
             selectedPosition?.let { pos ->
+                val displayPos = flippedPosition(pos)
                 drawRect(
-                    color = Color.Yellow.copy(alpha = 0.3f),
-                    topLeft = Offset(pos.col * squareSize, pos.row * squareSize),
+                    color = board_selected_square_highlight,
+                    topLeft = Offset(displayPos.col * squareSize, displayPos.row * squareSize),
                     size = androidx.compose.ui.geometry.Size(squareSize, squareSize)
                 )
             }
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
-            for (row in 0..7) {
-                for (col in 0..7) {
-                    if ((row + col) % 2 != 0) {
-                        val position = Position(row, col)
+            for (displayRow in 0..7) {
+                for (displayCol in 0..7) {
+                    val boardRow = if (flipped) 7 - displayRow else displayRow
+                    val boardCol = if (flipped) 7 - displayCol else displayCol
+                    if ((boardRow + boardCol) % 2 != 0) {
+                        val position = Position(boardRow, boardCol)
                         val piece = board.getPieceAt(position)
                         val isValidMove = validMovePositions.contains(position)
                         val isCapturePath = capturePathPositions.contains(position)
@@ -107,8 +117,8 @@ fun BoardView(
                                 isSelected = isSelected,
                                 modifier = Modifier
                                     .offset(
-                                        x = (col * squareSizeDp.value).dp,
-                                        y = (row * squareSizeDp.value).dp
+                                        x = (displayCol * squareSizeDp.value).dp,
+                                        y = (displayRow * squareSizeDp.value).dp
                                     )
                                     .size(squareSizeDp),
                                 onClick = { onSquareClick(position) }
@@ -119,8 +129,8 @@ fun BoardView(
                                 isCapturePath = false,
                                 modifier = Modifier
                                     .offset(
-                                        x = (col * squareSizeDp.value).dp,
-                                        y = (row * squareSizeDp.value).dp
+                                        x = (displayCol * squareSizeDp.value).dp,
+                                        y = (displayRow * squareSizeDp.value).dp
                                     )
                                     .size(squareSizeDp),
                                 onClick = { onSquareClick(position) }
@@ -131,8 +141,8 @@ fun BoardView(
                                 isCapturePath = true,
                                 modifier = Modifier
                                     .offset(
-                                        x = (col * squareSizeDp.value).dp,
-                                        y = (row * squareSizeDp.value).dp
+                                        x = (displayCol * squareSizeDp.value).dp,
+                                        y = (displayRow * squareSizeDp.value).dp
                                     )
                                     .size(squareSizeDp),
                                 onClick = { onSquareClick(position) }
@@ -146,8 +156,7 @@ fun BoardView(
 }
 
 /**
- * Draws an arrow from the center of `from` square towards `to` square.
- * If `lengthFactor` < 1.0, the arrow stops short of the target center.
+ * Draws an arrow from the centre of the `from` square towards the `to` square.
  */
 private fun DrawScope.drawArrow(
     from: Position,
@@ -166,11 +175,9 @@ private fun DrawScope.drawArrow(
     val dist = kotlin.math.sqrt(dx * dx + dy * dy)
     if (dist == 0f) return
 
-    // End point scaled by lengthFactor
     val endX = fromX + dx * lengthFactor
     val endY = fromY + dy * lengthFactor
 
-    // Arrowhead dimensions
     val headLength = 12f
     val headAngle = kotlin.math.PI / 6  // 30°
 
@@ -180,7 +187,6 @@ private fun DrawScope.drawArrow(
     val headX2 = endX - headLength * kotlin.math.cos(angle + headAngle).toFloat()
     val headY2 = endY - headLength * kotlin.math.sin(angle + headAngle).toFloat()
 
-    // Draw line
     drawLine(
         color = color,
         start = Offset(fromX, fromY),
@@ -188,7 +194,6 @@ private fun DrawScope.drawArrow(
         strokeWidth = 4.dp.toPx()
     )
 
-    // Draw arrowhead
     val path = Path().apply {
         moveTo(endX, endY)
         lineTo(headX1, headY1)
