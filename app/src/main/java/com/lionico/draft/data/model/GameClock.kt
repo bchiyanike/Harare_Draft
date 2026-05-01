@@ -15,7 +15,7 @@ data class ClockState(
 class GameClock(
     timeControl: TimeControl = TimeControl.PRESETS.first()
 ) {
-    private val incrementSeconds = timeControl.incrementSeconds
+    private var incrementSeconds = timeControl.incrementSeconds
 
     private val _state = MutableStateFlow(
         ClockState(
@@ -26,8 +26,6 @@ class GameClock(
         )
     )
     val state: StateFlow<ClockState> = _state.asStateFlow()
-
-    private var timerJob: kotlinx.coroutines.Job? = null
 
     fun start(player: Player) {
         _state.value = _state.value.copy(
@@ -88,7 +86,7 @@ class GameClock(
     }
 
     fun reset(timeControl: TimeControl = TimeControl.PRESETS.first()) {
-        timerJob?.cancel()
+        incrementSeconds = timeControl.incrementSeconds
         _state.value = ClockState(
             player1TimeSeconds = timeControl.totalSeconds,
             player2TimeSeconds = timeControl.totalSeconds,
