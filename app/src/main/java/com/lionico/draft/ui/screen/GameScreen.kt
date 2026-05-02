@@ -52,6 +52,7 @@ fun GameScreen(
     val clockState by viewModel.clockState.collectAsState()
     val player1Name by viewModel.player1Name.collectAsState()
     val player2Name by viewModel.player2Name.collectAsState()
+    val resolvedHumanSide by viewModel.humanSide.collectAsState()
     val pieceCounts = viewModel.getPieceCounts()
 
     LaunchedEffect(gameMode, timeControl, gameId, continueMoveIndex, humanSide) {
@@ -116,7 +117,8 @@ fun GameScreen(
                 onSquareClick = viewModel::onSquareClick,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(8.dp)
+                    .padding(8.dp),
+                flipped = (resolvedHumanSide == Player.PLAYER_2)
             )
 
             GameControls(
