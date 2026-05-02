@@ -82,6 +82,9 @@ class GameViewModel @Inject constructor(
     private val _player2Name = MutableStateFlow("Player 2")
     val player2Name: StateFlow<String> = _player2Name.asStateFlow()
 
+    private val _humanSide = MutableStateFlow<Player?>(null)
+    val humanSide: StateFlow<Player?> = _humanSide.asStateFlow()
+
     private var gameMode = GameMode.PLAYER_VS_PLAYER
     private var aiDifficulty = Difficulty.MEDIUM
     private var currentTimeControl = TimeControl.PRESETS.last()
@@ -120,10 +123,12 @@ class GameViewModel @Inject constructor(
                     _player1Name.value = humanName
                     _player2Name.value = aiName
                     aiPlayer = Player.PLAYER_2
+                    _humanSide.value = Player.PLAYER_1
                 } else {
                     _player1Name.value = aiName
                     _player2Name.value = humanName
                     aiPlayer = Player.PLAYER_1
+                    _humanSide.value = Player.PLAYER_2
                 }
                 playerPreferences.setPlayer2Name(aiName)
             } else {
@@ -136,10 +141,10 @@ class GameViewModel @Inject constructor(
                     _player2Name.value = names.player1Name
                 }
                 aiPlayer = null
+                _humanSide.value = null
             }
             resetGame()
 
-            // If AI is assigned to the starting side (Red), trigger its move immediately.
             if (aiPlayer != null && _currentPlayer.value == aiPlayer &&
                 _gameStatus.value == GameStatus.ONGOING) {
                 makeAIMove()
@@ -437,6 +442,7 @@ class GameViewModel @Inject constructor(
             _player2Name.value = gameResult.player2Name
             aiPlayer = Player.PLAYER_1
         }
+        _humanSide.value = humanSide
         viewModelScope.launch {
             playerPreferences.setPlayer2Name(aiName)
         }
