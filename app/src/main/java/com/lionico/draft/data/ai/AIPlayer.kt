@@ -6,10 +6,15 @@ import com.lionico.draft.data.engine.MoveValidator
 import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.PieceType
 import com.lionico.draft.data.model.Player
+import kotlin.random.Random
 
 class AIPlayer {
 
-    fun getBestMove(board: Board, player: Player, difficulty: Difficulty): Move {
+    /**
+     * Returns the best move for the given board and player, according to the
+     * [profile] that controls search depth and human‑like mistake probability.
+     */
+    fun getBestMove(board: Board, player: Player, profile: AiStrengthProfile): Move {
         val validator = MoveValidator(board)
         val moves = validator.getValidMoves(player)
 
@@ -28,7 +33,7 @@ class AIPlayer {
             val score = -negamax(
                 board = newBoard,
                 player = player.opponent(),
-                depth = difficulty.depth - 1,
+                depth = profile.maxDepth - 1,
                 alpha = Int.MIN_VALUE + 1,
                 beta = Int.MAX_VALUE
             )
@@ -39,7 +44,21 @@ class AIPlayer {
             }
         }
 
+        // Mistake: sometimes pick a random legal move instead of the best one
+        if (shouldMakeMistake(profile.mistakeProbability)) {
+            return moves.random()
+        }
+
         return bestMove
+    }
+
+    /**
+     * Returns a purely random legal move (no search).
+     */
+    fun getRandomMove(board: Board, player: Player): Move {
+        val validator = MoveValidator(board)
+        val moves = validator.getValidMoves(player)
+        return if (moves.isNotEmpty()) moves.random() else Move.NONE
     }
 
     private fun negamax(
@@ -94,9 +113,7 @@ class AIPlayer {
         board.setPieceAt(move.to, finalPiece)
     }
 
-    fun getRandomMove(board: Board, player: Player): Move {
-        val validator = MoveValidator(board)
-        val moves = validator.getValidMoves(player)
-        return if (moves.isNotEmpty()) moves.random() else Move.NONE
+    private fun shouldMakeMistake(probability: Float): Boolean {
+        return Random.nextFloat() < probability
     }
 }
