@@ -12,6 +12,10 @@ val Player1PieceColor = Color(0xFFD32F2F)    // Red for bottom player
 val Player2PieceColor = Color(0xFF1976D2)    // Blue for top player
 val ValidMoveHighlight = Color(0xFF4CAF50).copy(alpha = 0.4f)  // Green with transparency
 val SelectedPieceBorder = Color(0xFFFFD700)  // Gold for selected piece
+val board_selected_square_highlight = Color(0xFFFFEB3B).copy(alpha = 0.3f) // yellow highlight for selected square
+
+// Live badge
+val live_badge_red = Color(0xFFFF3B30)       // red for LIVE badge
 
 // Analysis arrows
 val PlayedArrowColor = Color(0xFF00BCD4)     // Cyan for the move actually played
