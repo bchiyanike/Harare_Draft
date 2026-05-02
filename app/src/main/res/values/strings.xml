@@ -1,5 +1,5 @@
-<!-- File: app/src/main/res/values/strings.xml -->
 <?xml version="1.0" encoding="utf-8"?>
+<!-- File: app/src/main/res/values/strings.xml -->
 <resources>
     <!-- App Name -->
     <string name="app_name">King Slayer PvP Draft</string>
