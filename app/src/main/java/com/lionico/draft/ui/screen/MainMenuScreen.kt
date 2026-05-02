@@ -8,30 +8,23 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,7 +38,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,12 +50,9 @@ import com.lionico.draft.ui.component.ClockSelectionSheet
 import com.lionico.draft.ui.component.FriendOptionsSheet
 import com.lionico.draft.ui.component.PlayerNameDialog
 import com.lionico.draft.ui.component.SectionHeader
-import com.lionico.draft.ui.component.StatBadge
-import com.lionico.draft.ui.component.StreamCard
-import com.lionico.draft.ui.component.sampleStreams
+import com.lionico.draft.ui.theme.live_badge_red
 import com.lionico.draft.ui.viewmodel.MainMenuViewModel
 import kotlinx.coroutines.launch
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +67,6 @@ fun MainMenuScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showNameDialog by remember { mutableStateOf(false) }
-    var crashLog by remember { mutableStateOf("") }
     var showClockSheet by remember { mutableStateOf(false) }
     var selectedClock by remember { mutableStateOf<TimeControl?>(null) }
     var pendingMode by remember { mutableStateOf<String?>(null) }
@@ -92,14 +80,12 @@ fun MainMenuScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Background image
         Image(
             painter = painterResource(id = R.drawable.castle_bg),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-        // Scrim
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -117,33 +103,26 @@ fun MainMenuScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = stringResource(R.string.app_name),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color.White,
+                        modifier = Modifier.weight(1f)
                     )
-                    Row {
-                        StatBadge(
-                            icon = Icons.Default.Person,
-                            count = "105.9K",
-                            label = stringResource(R.string.players_label)
+                    IconButton(
+                        onClick = onSettings,
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings),
+                            tint = Color.White,
+                            modifier = Modifier.height(28.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        StatBadge(
-                            icon = Icons.Default.Group,
-                            count = "44.2K",
-                            label = stringResource(R.string.games_label)
-                        )
-                        IconButton(onClick = onSettings) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings",
-                                tint = Color.White
-                            )
-                        }
                     }
                 }
             }
@@ -198,8 +177,12 @@ fun MainMenuScreen(
                 SectionHeader(title = stringResource(R.string.live_now))
             }
 
-            items(sampleStreams) { stream ->
-                StreamCard(stream, onClick = showComingSoonToast)
+            item {
+                CompactLiveCard(
+                    title = "King Slayer Showdown",
+                    description = "Live commentary by Grandmaster Jay",
+                    badge = "LIVE"
+                )
             }
 
             item {
@@ -239,53 +222,7 @@ fun MainMenuScreen(
                     )
                 }
             }
-
-            // --- DEBUG: Crash log viewer — remove before release ---
-            item {
-                Button(
-                    onClick = {
-                        val file = File(context.filesDir, "crash_log.txt")
-                        crashLog = if (file.exists()) file.readText() else "No crash log found."
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "Show Crash Log (Debug)",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-            // --- END DEBUG ---
         }
-
-        // --- DEBUG: Crash log dialog — remove before release ---
-        if (crashLog.isNotEmpty()) {
-            AlertDialog(
-                onDismissRequest = { crashLog = "" },
-                confirmButton = {
-                    TextButton(onClick = { crashLog = "" }) {
-                        Text("Close")
-                    }
-                },
-                title = { Text("Crash Log") },
-                text = {
-                    Text(
-                        text = crashLog,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 10.sp,
-                        modifier = Modifier.verticalScroll(rememberScrollState())
-                    )
-                }
-            )
-        }
-        // --- END DEBUG ---
 
         if (showClockSheet) {
             ClockSelectionSheet(
@@ -340,6 +277,53 @@ fun MainMenuScreen(
                     showNameDialog = false
                 },
                 onDismiss = { showNameDialog = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactLiveCard(
+    title: String,
+    description: String,
+    badge: String
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    maxLines = 1
+                )
+                Text(
+                    text = description,
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.7f),
+                    maxLines = 1
+                )
+            }
+            Text(
+                text = badge,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = live_badge_red,
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
     }
