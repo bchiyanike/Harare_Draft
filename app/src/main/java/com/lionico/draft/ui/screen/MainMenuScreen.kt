@@ -57,7 +57,6 @@ import com.lionico.draft.ui.component.SectionHeader
 import com.lionico.draft.ui.theme.live_badge_red
 import com.lionico.draft.ui.viewmodel.MainMenuViewModel
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,7 +129,7 @@ fun MainMenuScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "${playerRating.roundToInt()} Elo",
+                                text = "${Math.round(playerRating).toInt()} Elo",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
