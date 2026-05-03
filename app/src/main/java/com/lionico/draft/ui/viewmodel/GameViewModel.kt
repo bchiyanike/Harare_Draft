@@ -124,7 +124,6 @@ class GameViewModel @Inject constructor(
 
     private fun loadPreferences() {
         viewModelScope.launch {
-            // Combine names and rating flows
             launch {
                 playerPreferences.playerNames.collect { names ->
                     _player1Name.value = names.player1Name
@@ -146,7 +145,6 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             val names = playerPreferences.playerNames.first()
             if (mode == GameMode.PLAYER_VS_COMPUTER) {
-                // Load selected AI rating from preferences
                 val selectedAiRating = playerPreferences.selectedAiRating.first()
                 aiProfile = AiStrengthProfile.forRating(selectedAiRating)
                 aiSessionRating = selectedAiRating.toFloat()
@@ -176,7 +174,7 @@ class GameViewModel @Inject constructor(
                 aiPlayer = null
                 aiSessionRating = 0f
                 _humanSide.value = null
-                _opponentRating.value = _playerRating.value // PvP both same player for now
+                _opponentRating.value = _playerRating.value
             }
             resetGame()
 
@@ -328,7 +326,6 @@ class GameViewModel @Inject constructor(
                 }
             }
 
-            // Compute Elo update for AI games
             if (gameMode == GameMode.PLAYER_VS_COMPUTER) {
                 computeRatingUpdate()
             }
@@ -338,7 +335,6 @@ class GameViewModel @Inject constructor(
     }
 
     private fun computeRatingUpdate() {
-        // Determine outcome from perspective of player (human)
         val score = when {
             _gameStatus.value == GameStatus.PLAYER_1_WINS && _humanSide.value == Player.PLAYER_1 -> 1.0f
             _gameStatus.value == GameStatus.PLAYER_2_WINS && _humanSide.value == Player.PLAYER_2 -> 1.0f
@@ -346,7 +342,6 @@ class GameViewModel @Inject constructor(
             else -> 0.0f
         }
 
-        // Update player rating (persistent)
         val (newPlayerRating, playerDelta) = updateRatingUseCase(
             _playerRating.value,
             aiSessionRating,
@@ -356,7 +351,6 @@ class GameViewModel @Inject constructor(
         _ratingDelta.value = playerDelta
         previousPlayerRating = _playerRating.value
 
-        // Update AI session rating (non-persistent)
         val aiScore = 1.0f - score
         val (newAiRating, aiDelta) = updateRatingUseCase(
             aiSessionRating,
@@ -367,12 +361,11 @@ class GameViewModel @Inject constructor(
         _opponentRating.value = aiSessionRating
         previousAiSessionRating = aiSessionRating
 
-        // Persist player rating
         viewModelScope.launch {
             playerPreferences.setPlayerRating(newPlayerRating)
+            playerPreferences.setLastRatingDelta(playerDelta)
         }
 
-        // Trigger rating animation
         _showRatingAnimation.value = true
     }
 
