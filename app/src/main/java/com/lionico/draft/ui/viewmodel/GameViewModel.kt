@@ -24,6 +24,8 @@ import com.lionico.draft.domain.usecase.ExecuteMoveUseCase
 import com.lionico.draft.domain.usecase.GetAIMoveUseCase
 import com.lionico.draft.domain.usecase.UpdateRatingUseCase
 import com.lionico.draft.domain.usecase.ValidateMoveUseCase
+import com.lionico.draft.domain.QuoteManager
+import com.lionico.draft.domain.QuoteType
 import com.lionico.draft.ui.feedback.HapticManager
 import com.lionico.draft.ui.feedback.SoundManager
 import com.lionico.draft.ui.feedback.SoundType
@@ -56,7 +58,8 @@ class GameViewModel @Inject constructor(
     private val historyRepository: GameHistoryRepository,
     private val soundManager: SoundManager,
     private val hapticManager: HapticManager,
-    @ApplicationContext private val appContext: Context
+    @ApplicationContext private val appContext: Context,
+    private val quoteManager: QuoteManager
 ) : ViewModel() {
 
     private val _boardState = MutableStateFlow(gameEngine.getBoard())
@@ -80,10 +83,10 @@ class GameViewModel @Inject constructor(
     private val _winner = MutableStateFlow<Player?>(null)
     val winner: StateFlow<Player?> = _winner.asStateFlow()
 
-    private val _player1Name = MutableStateFlow("Player 1")
+    private val _player1Name = MutableStateFlow(appContext.getString(R.string.default_player1_name))
     val player1Name: StateFlow<String> = _player1Name.asStateFlow()
 
-    private val _player2Name = MutableStateFlow("Player 2")
+    private val _player2Name = MutableStateFlow(appContext.getString(R.string.default_player2_name))
     val player2Name: StateFlow<String> = _player2Name.asStateFlow()
 
     private val _humanSide = MutableStateFlow<Player?>(null)
@@ -101,6 +104,8 @@ class GameViewModel @Inject constructor(
 
     private val _showRatingAnimation = MutableStateFlow(false)
     val showRatingAnimation: StateFlow<Boolean> = _showRatingAnimation.asStateFlow()
+
+    val currentQuote: StateFlow<String> = quoteManager.currentQuote
 
     private var gameMode = GameMode.PLAYER_VS_PLAYER
     private var aiProfile: AiStrengthProfile? = null
@@ -176,6 +181,7 @@ class GameViewModel @Inject constructor(
                 _humanSide.value = null
                 _opponentRating.value = _playerRating.value
             }
+            quoteManager.setType(QuoteType.GENERAL)
             resetGame()
 
             if (aiPlayer != null && _currentPlayer.value == aiPlayer &&
@@ -317,6 +323,25 @@ class GameViewModel @Inject constructor(
             gameClock.pause()
             clockTickJob?.cancel()
 
+            when (_gameStatus.value) {
+                GameStatus.PLAYER_1_WINS -> {
+                    if (aiPlayer == null || _humanSide.value == Player.PLAYER_1) {
+                        quoteManager.setType(QuoteType.WIN)
+                    } else {
+                        quoteManager.setType(QuoteType.LOSE)
+                    }
+                }
+                GameStatus.PLAYER_2_WINS -> {
+                    if (aiPlayer == null || _humanSide.value == Player.PLAYER_2) {
+                        quoteManager.setType(QuoteType.WIN)
+                    } else {
+                        quoteManager.setType(QuoteType.LOSE)
+                    }
+                }
+                GameStatus.DRAW -> quoteManager.setType(QuoteType.TAUNT)
+                else -> {}
+            }
+
             viewModelScope.launch {
                 when (_gameStatus.value) {
                     GameStatus.PLAYER_1_WINS -> soundManager.play(SoundType.WIN)
@@ -378,7 +403,7 @@ class GameViewModel @Inject constructor(
             val winnerName = when (_gameStatus.value) {
                 GameStatus.PLAYER_1_WINS -> _player1Name.value
                 GameStatus.PLAYER_2_WINS -> _player2Name.value
-                else -> "Draw"
+                else -> appContext.getString(R.string.draw_result)
             }
 
             val duration = ((System.currentTimeMillis() - gameStartTime) / 1000).toInt()
@@ -423,6 +448,25 @@ class GameViewModel @Inject constructor(
         }
         _winner.value = if (player == Player.PLAYER_1) Player.PLAYER_2 else Player.PLAYER_1
 
+        // Timeout also triggers quote category change
+        when (_gameStatus.value) {
+            GameStatus.PLAYER_1_WINS -> {
+                if (aiPlayer == null || _humanSide.value == Player.PLAYER_1) {
+                    quoteManager.setType(QuoteType.WIN)
+                } else {
+                    quoteManager.setType(QuoteType.LOSE)
+                }
+            }
+            GameStatus.PLAYER_2_WINS -> {
+                if (aiPlayer == null || _humanSide.value == Player.PLAYER_2) {
+                    quoteManager.setType(QuoteType.WIN)
+                } else {
+                    quoteManager.setType(QuoteType.LOSE)
+                }
+            }
+            else -> {}
+        }
+
         if (gameMode == GameMode.PLAYER_VS_COMPUTER) {
             computeRatingUpdate()
         }
@@ -440,6 +484,7 @@ class GameViewModel @Inject constructor(
         _isAIThinking.value = false
         _ratingDelta.value = 0
         _showRatingAnimation.value = false
+        quoteManager.setType(QuoteType.GENERAL)
     }
 
     fun formatTime(seconds: Int): String = gameClock.formatTime(seconds)
@@ -490,6 +535,7 @@ class GameViewModel @Inject constructor(
         gameClock.reset(timeControl)
         startClock()
         gameClock.start(gameEngine.getCurrentPlayer())
+        quoteManager.setType(QuoteType.GENERAL)
 
         updateUIState()
         clearSelection()
@@ -541,6 +587,7 @@ class GameViewModel @Inject constructor(
         gameClock.reset(timeControl)
         startClock()
         gameClock.start(gameEngine.getCurrentPlayer())
+        quoteManager.setType(QuoteType.GENERAL)
 
         updateUIState()
         clearSelection()
