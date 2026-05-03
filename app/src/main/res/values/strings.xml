@@ -77,9 +77,10 @@
     <string name="player_2_wins">Player 2 Wins!</string>
     <string name="draw">Draw!</string>
     <string name="draw_result">Draw</string>
-    <string name="congratulations_p1">Congratulations! Player 1 has won the game.</string>
-    <string name="congratulations_p2">Congratulations! Player 2 has won the game.</string>
     <string name="draw_message">Neither player can force a win. The game ends in a draw.</string>
+    <string name="game_over_title_player_wins">%1$s Wins!</string>
+    <string name="game_over_congratulations">Congratulations! %1$s has won the game.</string>
+    <string name="rematch_button">Rematch</string>
 
     <!-- History Screen -->
     <string name="history">History</string>
