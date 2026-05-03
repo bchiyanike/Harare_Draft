@@ -14,8 +14,8 @@ import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.Position
 import com.lionico.draft.data.repository.GameHistoryRepository
-import com.lionico.draft.domain.GetAIMoveUseCase
 import com.lionico.draft.domain.QuoteManager
+import com.lionico.draft.domain.usecase.GetAIMoveUseCase
 import com.lionico.draft.ui.component.Arrow
 import com.lionico.draft.ui.theme.BestArrowColor
 import com.lionico.draft.ui.theme.PlayedArrowColor
