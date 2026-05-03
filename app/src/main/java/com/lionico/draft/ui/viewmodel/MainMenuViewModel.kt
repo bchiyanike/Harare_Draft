@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.datastore.PlayerPreferences
 import com.lionico.draft.data.repository.GameHistoryRepository
+import com.lionico.draft.domain.QuoteManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -16,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MainMenuViewModel @Inject constructor(
     private val preferences: PlayerPreferences,
-    private val historyRepository: GameHistoryRepository
+    private val historyRepository: GameHistoryRepository,
+    quoteManager: QuoteManager
 ) : ViewModel() {
 
     val playerNames = preferences.playerNames
@@ -34,6 +37,8 @@ class MainMenuViewModel @Inject constructor(
     val gameCount = historyRepository.getAllResults()
         .map { results -> results.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val currentQuote: StateFlow<String> = quoteManager.currentQuote
 
     fun setPlayerNames(player1: String, player2: String) {
         viewModelScope.launch {
