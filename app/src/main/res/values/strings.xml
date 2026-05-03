@@ -113,4 +113,7 @@
     <string name="close">Close</string>
     <string name="back">Back</string>
     <string name="settings">Settings</string>
+
+    <!-- Quotes -->
+    <string name="quote_fallback">"Success is not final, failure is not fatal: it is the courage to continue that counts." — Winston Churchill</string>
 </resources>
