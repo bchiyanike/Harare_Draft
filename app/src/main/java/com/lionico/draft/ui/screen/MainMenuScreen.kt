@@ -129,7 +129,7 @@ fun MainMenuScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "${Math.round(playerRating).toInt()} Elo",
+                                text = "${playerRating.toInt()} Elo",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
