@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/lionico/draft/ui/viewmodel/GameViewModel.kt
+// app/src/main/java/com/lionico/draft/ui/viewmodel/GameViewModel.kt
 package com.lionico.draft.ui.viewmodel
 
 import android.content.Context
@@ -19,13 +19,13 @@ import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.Position
 import com.lionico.draft.data.model.TimeControl
 import com.lionico.draft.data.repository.GameHistoryRepository
+import com.lionico.draft.domain.QuoteManager
+import com.lionico.draft.domain.QuoteType
 import com.lionico.draft.domain.usecase.CheckGameOverUseCase
 import com.lionico.draft.domain.usecase.ExecuteMoveUseCase
 import com.lionico.draft.domain.usecase.GetAIMoveUseCase
 import com.lionico.draft.domain.usecase.UpdateRatingUseCase
 import com.lionico.draft.domain.usecase.ValidateMoveUseCase
-import com.lionico.draft.domain.QuoteManager
-import com.lionico.draft.domain.QuoteType
 import com.lionico.draft.ui.feedback.HapticManager
 import com.lionico.draft.ui.feedback.SoundManager
 import com.lionico.draft.ui.feedback.SoundType
@@ -44,6 +44,11 @@ import kotlin.random.Random
 enum class GameMode {
     PLAYER_VS_PLAYER,
     PLAYER_VS_COMPUTER
+}
+
+enum class GamePhase {
+    PRE_GAME,
+    ONGOING
 }
 
 @HiltViewModel
@@ -106,6 +111,15 @@ class GameViewModel @Inject constructor(
     val showRatingAnimation: StateFlow<Boolean> = _showRatingAnimation.asStateFlow()
 
     val currentQuote: StateFlow<String> = quoteManager.currentQuote
+
+    // Pre‑game countdown
+    private val _gamePhase = MutableStateFlow(GamePhase.PRE_GAME)
+    val gamePhase: StateFlow<GamePhase> = _gamePhase.asStateFlow()
+
+    private val _countdownSeconds = MutableStateFlow(3)
+    val countdownSeconds: StateFlow<Int> = _countdownSeconds.asStateFlow()
+
+    private var preGameJob: Job? = null
 
     private var gameMode = GameMode.PLAYER_VS_PLAYER
     private var aiProfile: AiStrengthProfile? = null
@@ -181,19 +195,45 @@ class GameViewModel @Inject constructor(
                 _humanSide.value = null
                 _opponentRating.value = _playerRating.value
             }
-            quoteManager.setType(QuoteType.GENERAL)
-            resetGame()
 
-            if (aiPlayer != null && _currentPlayer.value == aiPlayer &&
-                _gameStatus.value == GameStatus.ONGOING) {
-                makeAIMove()
+            // Start pre‑game phase with a taunt quote and countdown
+            _gamePhase.value = GamePhase.PRE_GAME
+            _countdownSeconds.value = 3
+            quoteManager.setType(QuoteType.TAUNT)
+
+            preGameJob?.cancel()
+            preGameJob = launch {
+                for (sec in 3 downTo 1) {
+                    _countdownSeconds.value = sec
+                    delay(1000L)
+                }
+                // Countdown finished → begin the actual game
+                _gamePhase.value = GamePhase.ONGOING
+                initializeGame()
             }
+        }
+    }
+
+    fun cancelPreGame() {
+        preGameJob?.cancel()
+        _gamePhase.value = GamePhase.ONGOING  // fallback, but screen will be popped
+        // No cleanup needed – the ViewModel will be cleared when navigating away
+    }
+
+    private fun initializeGame() {
+        quoteManager.setType(QuoteType.GENERAL)
+        resetGame()
+
+        if (aiPlayer != null && _currentPlayer.value == aiPlayer &&
+            _gameStatus.value == GameStatus.ONGOING) {
+            makeAIMove()
         }
     }
 
     fun onSquareClick(position: Position) {
         if (_isAIThinking.value) return
         if (_gameStatus.value != GameStatus.ONGOING) return
+        if (_gamePhase.value != GamePhase.ONGOING) return
         if (aiPlayer != null && _currentPlayer.value == aiPlayer) return
 
         val selected = _selectedPosition.value
@@ -448,7 +488,6 @@ class GameViewModel @Inject constructor(
         }
         _winner.value = if (player == Player.PLAYER_1) Player.PLAYER_2 else Player.PLAYER_1
 
-        // Timeout also triggers quote category change
         when (_gameStatus.value) {
             GameStatus.PLAYER_1_WINS -> {
                 if (aiPlayer == null || _humanSide.value == Player.PLAYER_1) {
@@ -508,6 +547,7 @@ class GameViewModel @Inject constructor(
     fun getPieceCounts(): Pair<Int, Int> = gameEngine.getPieceCounts()
 
     suspend fun continueFromGame(gameId: Long, timeControl: TimeControl) {
+        // For simplicity, skip pre‑game countdown when continuing a game
         val gameResult = historyRepository.getGameById(gameId) ?: return
         val moves = GameMove.deserialize(gameResult.movesJson)
         gameEngine.newGame()
@@ -531,6 +571,7 @@ class GameViewModel @Inject constructor(
             playerPreferences.setPlayer2Name(aiName)
         }
 
+        _gamePhase.value = GamePhase.ONGOING
         gameStartTime = System.currentTimeMillis()
         gameClock.reset(timeControl)
         startClock()
@@ -583,6 +624,7 @@ class GameViewModel @Inject constructor(
             playerPreferences.setPlayer2Name(aiName)
         }
 
+        _gamePhase.value = GamePhase.ONGOING
         gameStartTime = System.currentTimeMillis()
         gameClock.reset(timeControl)
         startClock()
@@ -601,5 +643,6 @@ class GameViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         clockTickJob?.cancel()
+        preGameJob?.cancel()
     }
 }
