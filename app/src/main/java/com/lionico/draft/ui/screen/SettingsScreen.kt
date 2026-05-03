@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/lionico/draft/ui/screen/SettingsScreen.kt
 package com.lionico.draft.ui.screen
 
 import androidx.compose.foundation.Image
@@ -16,19 +17,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -43,10 +41,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lionico.draft.R
-import com.lionico.draft.data.ai.Difficulty
+import com.lionico.draft.data.ai.AiStrengthProfile
 import com.lionico.draft.ui.viewmodel.SettingsViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -55,11 +52,13 @@ fun SettingsScreen(
 ) {
     val player1Name by viewModel.player1Name.collectAsStateWithLifecycle()
     val player2Name by viewModel.player2Name.collectAsStateWithLifecycle()
-    val difficulty by viewModel.difficulty.collectAsStateWithLifecycle()
+    val selectedAiRating by viewModel.selectedAiRating.collectAsStateWithLifecycle()
     val soundEnabled by viewModel.soundEnabled.collectAsStateWithLifecycle()
     val hapticEnabled by viewModel.hapticEnabled.collectAsStateWithLifecycle()
 
-    var difficultyDropdownExpanded by remember { mutableStateOf(false) }
+    // Map rating to slider index (0..8)
+    val currentIndex = AiStrengthProfile.PRESETS.indexOfFirst { it.eloRating == selectedAiRating }
+        .coerceIn(0, 8).toFloat()
 
     Box(modifier = modifier.fillMaxSize()) {
         // Background
@@ -93,12 +92,12 @@ fun SettingsScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                             tint = Color.White
                         )
                     }
                     Text(
-                        text = "Settings",
+                        text = stringResource(R.string.settings),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -108,13 +107,13 @@ fun SettingsScreen(
 
             // Player Names
             item {
-                SettingsSectionHeader(title = "Player Names")
+                SettingsSectionHeader(title = stringResource(R.string.players_label))
             }
             item {
                 OutlinedTextField(
                     value = player1Name,
                     onValueChange = { viewModel.setPlayer1Name(it) },
-                    label = { Text("Player 1 Name") },
+                    label = { Text(stringResource(R.string.player_1_short)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                     modifier = Modifier.fillMaxWidth(),
@@ -125,7 +124,7 @@ fun SettingsScreen(
                 OutlinedTextField(
                     value = player2Name,
                     onValueChange = { viewModel.setPlayer2Name(it) },
-                    label = { Text("Player 2 Name") },
+                    label = { Text(stringResource(R.string.player_2_short)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                     modifier = Modifier.fillMaxWidth(),
@@ -133,64 +132,9 @@ fun SettingsScreen(
                 )
             }
 
-            // AI Difficulty
+            // AI Opponent Rating (Slider)
             item {
-                SettingsSectionHeader(title = "AI Difficulty")
-            }
-            item {
-                ExposedDropdownMenuBox(
-                    expanded = difficultyDropdownExpanded,
-                    onExpandedChange = { difficultyDropdownExpanded = it }
-                ) {
-                    OutlinedTextField(
-                        value = difficulty.label(),
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = difficultyDropdownExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    ExposedDropdownMenu(
-                        expanded = difficultyDropdownExpanded,
-                        onDismissRequest = { difficultyDropdownExpanded = false }
-                    ) {
-                        Difficulty.entries.forEach { d ->
-                            DropdownMenuItem(
-                                text = { Text(d.label()) },
-                                onClick = {
-                                    viewModel.setDifficulty(d)
-                                    difficultyDropdownExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Feedback Toggles
-            item {
-                SettingsSectionHeader(title = "Feedback")
-            }
-            item {
-                SettingsToggleRow(
-                    label = "Sound Effects",
-                    checked = soundEnabled,
-                    onCheckedChange = { viewModel.setSoundEnabled(it) }
-                )
-            }
-            item {
-                SettingsToggleRow(
-                    label = "Haptic Feedback",
-                    checked = hapticEnabled,
-                    onCheckedChange = { viewModel.setHapticEnabled(it) }
-                )
-            }
-
-            // About
-            item {
-                SettingsSectionHeader(title = "About")
+                SettingsSectionHeader(title = stringResource(R.string.ai_rating_label))
             }
             item {
                 Column(
@@ -203,7 +147,70 @@ fun SettingsScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Harare Draft",
+                        text = stringResource(R.string.ai_rating_format, selectedAiRating),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Slider(
+                        value = currentIndex,
+                        onValueChange = { newIndex ->
+                            val index = newIndex.toInt().coerceIn(0, 8)
+                            val newRating = AiStrengthProfile.PRESETS[index].eloRating
+                            viewModel.setSelectedAiRating(newRating)
+                        },
+                        valueRange = 0f..8f,
+                        steps = 7, // 8 intervals between 9 stops
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    // Show min/max labels
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("900", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp)
+                        Text("2700", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp)
+                    }
+                }
+            }
+
+            // Feedback Toggles
+            item {
+                SettingsSectionHeader(title = stringResource(R.string.settings_feedback_header))
+            }
+            item {
+                SettingsToggleRow(
+                    label = stringResource(R.string.sound_effects_label),
+                    checked = soundEnabled,
+                    onCheckedChange = { viewModel.setSoundEnabled(it) }
+                )
+            }
+            item {
+                SettingsToggleRow(
+                    label = stringResource(R.string.haptic_feedback_label),
+                    checked = hapticEnabled,
+                    onCheckedChange = { viewModel.setHapticEnabled(it) }
+                )
+            }
+
+            // About
+            item {
+                SettingsSectionHeader(title = stringResource(R.string.about_label))
+            }
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = Color.White.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.app_name),
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
                         color = Color.White
@@ -232,7 +239,7 @@ private fun SettingsSectionHeader(title: String) {
         text = title,
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
+        color = Color.White.copy(alpha = 0.8f),
         modifier = Modifier.padding(top = 4.dp)
     )
 }
@@ -264,10 +271,4 @@ private fun SettingsToggleRow(
             onCheckedChange = onCheckedChange
         )
     }
-}
-
-private fun Difficulty.label(): String = when (this) {
-    Difficulty.EASY -> "Easy"
-    Difficulty.MEDIUM -> "Medium"
-    Difficulty.HARD -> "Hard"
 }
