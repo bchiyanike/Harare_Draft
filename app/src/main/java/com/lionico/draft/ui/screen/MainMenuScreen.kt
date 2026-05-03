@@ -79,6 +79,8 @@ fun MainMenuScreen(
     val playerNames by viewModel.playerNames.collectAsStateWithLifecycle(initialValue = null)
     val currentDifficulty by viewModel.difficulty.collectAsStateWithLifecycle(initialValue = Difficulty.MEDIUM)
     val playerRating by viewModel.playerRating.collectAsStateWithLifecycle(initialValue = 1200)
+    val lastDelta by viewModel.lastRatingDelta.collectAsStateWithLifecycle(initialValue = 0)
+    val gameCount by viewModel.gameCount.collectAsStateWithLifecycle(initialValue = 0)
 
     val showComingSoonToast: () -> Unit = {
         Toast.makeText(context, R.string.coming_soon, Toast.LENGTH_SHORT).show()
@@ -103,48 +105,69 @@ fun MainMenuScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header with rating badge and settings
+            // Header with player name, games count, rating, and settings
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Player Name
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.app_name),
-                            fontSize = 28.sp,
+                            text = playerNames?.player1Name ?: "You",
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.EmojiEvents,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
+                    }
+
+                    // Games vs AI count
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "⚔️ $gameCount",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Elo rating with arrow
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${playerRating.toInt()}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        if (lastDelta != 0) {
+                            val arrow = if (lastDelta > 0) "⬆️" else "⬇️"
                             Text(
-                                text = "${playerRating.toInt()} Elo",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
+                                text = arrow,
+                                fontSize = 14.sp
                             )
                         }
                     }
-                    IconButton(
-                        onClick = onSettings,
-                        modifier = Modifier.padding(8.dp)
-                    ) {
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Settings icon
+                    IconButton(onClick = onSettings, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = stringResource(R.string.settings),
                             tint = Color.White,
-                            modifier = Modifier.height(28.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
