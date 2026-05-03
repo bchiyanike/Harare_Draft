@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/lionico/draft/MainActivity.kt
+// app/src/main/java/com/lionico/draft/MainActivity.kt
 package com.lionico.draft
 
 import android.os.Bundle
@@ -9,8 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -38,6 +43,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             LionicoTheme {
+                // Enable immersive mode: hide bars after content is ready, allow swipe to reveal
+                EnableImmersiveMode()
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -46,6 +54,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun EnableImmersiveMode() {
+    val view = LocalView.current
+    DisposableEffect(Unit) {
+        val window = (view.context as? android.app.Activity)?.window ?: return@DisposableEffect onDispose {}
+        val insetsController = WindowCompat.getInsetsController(window, view)
+        insetsController.apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+        onDispose { }
     }
 }
 
@@ -101,7 +124,6 @@ fun AppNavigation() {
                 onAnalyze = { gameId ->
                     navController.navigate("replay/$gameId?mode=analysis")
                 }
-                // onContinueVsAI removed — now handled inside ReplayScreen
             )
         }
 
@@ -176,7 +198,6 @@ fun AppNavigation() {
                 initialMode = mode,
                 onNavigateBack = { navController.popBackStack() },
                 onContinueWithAI = { continueGameId, moveIndex, humanSide ->
-                    // Navigate to game with continue params
                     val timeControlLabel = TimeControl.PRESETS.first().label() // default time control
                     navController.navigate(
                         "game/player_vs_computer?timeControl=$timeControlLabel" +
