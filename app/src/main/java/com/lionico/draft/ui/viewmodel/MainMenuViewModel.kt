@@ -31,8 +31,8 @@ class MainMenuViewModel @Inject constructor(
     val lastRatingDelta = preferences.lastRatingDelta
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    val gameCount = historyRepository.getAllGames()
-        .map { it.size }
+    val gameCount = historyRepository.getAllResults()
+        .map { results -> results.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     fun setPlayerNames(player1: String, player2: String) {
