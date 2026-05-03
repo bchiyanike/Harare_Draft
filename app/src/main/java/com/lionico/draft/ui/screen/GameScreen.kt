@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,7 +52,6 @@ import com.lionico.draft.ui.theme.RatingPositiveGreen
 import com.lionico.draft.ui.viewmodel.GameMode
 import com.lionico.draft.ui.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,13 +139,13 @@ fun GameScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "${playerRating.roundToInt()} Elo",
+                        text = "${playerRating.toInt()} Elo",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "${opponentRating.roundToInt()} Elo",
+                        text = "${opponentRating.toInt()} Elo",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
