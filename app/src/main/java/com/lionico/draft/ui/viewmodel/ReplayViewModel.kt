@@ -14,7 +14,8 @@ import com.lionico.draft.data.model.Move
 import com.lionico.draft.data.model.Player
 import com.lionico.draft.data.model.Position
 import com.lionico.draft.data.repository.GameHistoryRepository
-import com.lionico.draft.domain.usecase.GetAIMoveUseCase
+import com.lionico.draft.domain.GetAIMoveUseCase
+import com.lionico.draft.domain.QuoteManager
 import com.lionico.draft.ui.component.Arrow
 import com.lionico.draft.ui.theme.BestArrowColor
 import com.lionico.draft.ui.theme.PlayedArrowColor
@@ -42,7 +43,8 @@ class ReplayViewModel @Inject constructor(
     private val gameEngine: GameEngine,
     private val historyRepository: GameHistoryRepository,
     private val getAIMoveUseCase: GetAIMoveUseCase,
-    @ApplicationContext private val appContext: Context
+    @ApplicationContext private val appContext: Context,
+    quoteManager: QuoteManager
 ) : ViewModel() {
 
     private val _boardState = MutableStateFlow(Board())
@@ -68,6 +70,8 @@ class ReplayViewModel @Inject constructor(
 
     private val _bestArrow = MutableStateFlow<Arrow?>(null)
     val bestArrow: StateFlow<Arrow?> = _bestArrow.asStateFlow()
+
+    val currentQuote: StateFlow<String> = quoteManager.currentQuote
 
     private var moves = emptyList<GameMove>()
     private var boardStates = mutableListOf<Board>()
