@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lionico.draft.R
+import com.lionico.draft.data.ai.AiStrengthProfile
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.datastore.PlayerPreferences
 import com.lionico.draft.data.engine.Board
@@ -21,6 +22,7 @@ import com.lionico.draft.data.repository.GameHistoryRepository
 import com.lionico.draft.domain.usecase.CheckGameOverUseCase
 import com.lionico.draft.domain.usecase.ExecuteMoveUseCase
 import com.lionico.draft.domain.usecase.GetAIMoveUseCase
+import com.lionico.draft.domain.usecase.UpdateRatingUseCase
 import com.lionico.draft.domain.usecase.ValidateMoveUseCase
 import com.lionico.draft.ui.feedback.HapticManager
 import com.lionico.draft.ui.feedback.SoundManager
@@ -49,6 +51,7 @@ class GameViewModel @Inject constructor(
     private val executeMoveUseCase: ExecuteMoveUseCase,
     private val checkGameOverUseCase: CheckGameOverUseCase,
     private val getAIMoveUseCase: GetAIMoveUseCase,
+    private val updateRatingUseCase: UpdateRatingUseCase,
     private val playerPreferences: PlayerPreferences,
     private val historyRepository: GameHistoryRepository,
     private val soundManager: SoundManager,
@@ -86,25 +89,52 @@ class GameViewModel @Inject constructor(
     private val _humanSide = MutableStateFlow<Player?>(null)
     val humanSide: StateFlow<Player?> = _humanSide.asStateFlow()
 
+    // Elo rating state
+    private val _playerRating = MutableStateFlow(1200f)
+    val playerRating: StateFlow<Float> = _playerRating.asStateFlow()
+
+    private val _opponentRating = MutableStateFlow(1200f)
+    val opponentRating: StateFlow<Float> = _opponentRating.asStateFlow()
+
+    private val _ratingDelta = MutableStateFlow(0)
+    val ratingDelta: StateFlow<Int> = _ratingDelta.asStateFlow()
+
+    private val _showRatingAnimation = MutableStateFlow(false)
+    val showRatingAnimation: StateFlow<Boolean> = _showRatingAnimation.asStateFlow()
+
     private var gameMode = GameMode.PLAYER_VS_PLAYER
-    private var aiDifficulty = Difficulty.MEDIUM
+    private var aiProfile: AiStrengthProfile? = null
     private var currentTimeControl = TimeControl.PRESETS.last()
     private var gameStartTime = 0L
     private var aiPlayer: Player? = null
+
+    // Session-only AI rating tracker (non-persistent)
+    private var aiSessionRating = 0f
+    private var playerRatingAtStart = 0f
+    private var previousPlayerRating = 0f
+    private var previousAiSessionRating = 0f
 
     private val gameClock = GameClock()
     val clockState = gameClock.state
     private var clockTickJob: Job? = null
 
     init {
-        loadPlayerNames()
+        loadPreferences()
     }
 
-    private fun loadPlayerNames() {
+    private fun loadPreferences() {
         viewModelScope.launch {
-            playerPreferences.playerNames.collect { names ->
-                _player1Name.value = names.player1Name
-                _player2Name.value = names.player2Name
+            // Combine names and rating flows
+            launch {
+                playerPreferences.playerNames.collect { names ->
+                    _player1Name.value = names.player1Name
+                    _player2Name.value = names.player2Name
+                }
+            }
+            launch {
+                playerPreferences.playerRating.collect { rating ->
+                    _playerRating.value = rating
+                }
             }
         }
     }
@@ -116,8 +146,15 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             val names = playerPreferences.playerNames.first()
             if (mode == GameMode.PLAYER_VS_COMPUTER) {
-                aiDifficulty = playerPreferences.difficulty.first()
-                val aiName = PlayerPreferences.randomAIName(aiDifficulty)
+                // Load selected AI rating from preferences
+                val selectedAiRating = playerPreferences.selectedAiRating.first()
+                aiProfile = AiStrengthProfile.forRating(selectedAiRating)
+                aiSessionRating = selectedAiRating.toFloat()
+                playerRatingAtStart = _playerRating.value
+                previousPlayerRating = _playerRating.value
+                previousAiSessionRating = aiSessionRating
+
+                val aiName = PlayerPreferences.randomAIName(selectedAiRating)
                 val humanName = names.player1Name
                 val humanIsRed = Random.nextBoolean()
                 if (humanIsRed) {
@@ -125,24 +162,21 @@ class GameViewModel @Inject constructor(
                     _player2Name.value = aiName
                     aiPlayer = Player.PLAYER_2
                     _humanSide.value = Player.PLAYER_1
+                    _opponentRating.value = aiSessionRating
                 } else {
                     _player1Name.value = aiName
                     _player2Name.value = humanName
                     aiPlayer = Player.PLAYER_1
                     _humanSide.value = Player.PLAYER_2
+                    _opponentRating.value = aiSessionRating
                 }
                 playerPreferences.setPlayer2Name(aiName)
             } else {
-                val player1IsRed = Random.nextBoolean()
-                if (player1IsRed) {
-                    _player1Name.value = names.player1Name
-                    _player2Name.value = names.player2Name
-                } else {
-                    _player1Name.value = names.player2Name
-                    _player2Name.value = names.player1Name
-                }
+                aiProfile = null
                 aiPlayer = null
+                aiSessionRating = 0f
                 _humanSide.value = null
+                _opponentRating.value = _playerRating.value // PvP both same player for now
             }
             resetGame()
 
@@ -230,12 +264,13 @@ class GameViewModel @Inject constructor(
 
     private fun makeAIMove() {
         if (_isAIThinking.value) return
+        val profile = aiProfile ?: return
 
         viewModelScope.launch {
             _isAIThinking.value = true
             try {
                 delay(300)
-                val move = getAIMoveUseCase(aiDifficulty)
+                val move = getAIMoveUseCase(profile)
                 if (move != Move.NONE) {
                     val wasPromotion = move.promotedToKing
                     val capturedPositions = move.capturedPositions
@@ -293,8 +328,56 @@ class GameViewModel @Inject constructor(
                 }
             }
 
+            // Compute Elo update for AI games
+            if (gameMode == GameMode.PLAYER_VS_COMPUTER) {
+                computeRatingUpdate()
+            }
+
             saveGameResult()
         }
+    }
+
+    private fun computeRatingUpdate() {
+        // Determine outcome from perspective of player (human)
+        val score = when {
+            _gameStatus.value == GameStatus.PLAYER_1_WINS && _humanSide.value == Player.PLAYER_1 -> 1.0f
+            _gameStatus.value == GameStatus.PLAYER_2_WINS && _humanSide.value == Player.PLAYER_2 -> 1.0f
+            _gameStatus.value == GameStatus.DRAW -> 0.5f
+            else -> 0.0f
+        }
+
+        // Update player rating (persistent)
+        val (newPlayerRating, playerDelta) = updateRatingUseCase(
+            _playerRating.value,
+            aiSessionRating,
+            score
+        )
+        _playerRating.value = newPlayerRating
+        _ratingDelta.value = playerDelta
+        previousPlayerRating = _playerRating.value
+
+        // Update AI session rating (non-persistent)
+        val aiScore = 1.0f - score
+        val (newAiRating, aiDelta) = updateRatingUseCase(
+            aiSessionRating,
+            playerRatingAtStart,
+            aiScore
+        )
+        aiSessionRating = newAiRating
+        _opponentRating.value = aiSessionRating
+        previousAiSessionRating = aiSessionRating
+
+        // Persist player rating
+        viewModelScope.launch {
+            playerPreferences.setPlayerRating(newPlayerRating)
+        }
+
+        // Trigger rating animation
+        _showRatingAnimation.value = true
+    }
+
+    fun dismissRatingAnimation() {
+        _showRatingAnimation.value = false
     }
 
     private fun saveGameResult() {
@@ -347,6 +430,9 @@ class GameViewModel @Inject constructor(
         }
         _winner.value = if (player == Player.PLAYER_1) Player.PLAYER_2 else Player.PLAYER_1
 
+        if (gameMode == GameMode.PLAYER_VS_COMPUTER) {
+            computeRatingUpdate()
+        }
         saveGameResult()
     }
 
@@ -359,6 +445,8 @@ class GameViewModel @Inject constructor(
         updateUIState()
         clearSelection()
         _isAIThinking.value = false
+        _ratingDelta.value = 0
+        _showRatingAnimation.value = false
     }
 
     fun formatTime(seconds: Int): String = gameClock.formatTime(seconds)
@@ -393,11 +481,15 @@ class GameViewModel @Inject constructor(
 
         gameMode = GameMode.PLAYER_VS_COMPUTER
         this.currentTimeControl = timeControl
-        aiDifficulty = playerPreferences.difficulty.first()
+        val selectedAiRating = playerPreferences.selectedAiRating.first()
+        aiProfile = AiStrengthProfile.forRating(selectedAiRating)
+        aiSessionRating = selectedAiRating.toFloat()
+        playerRatingAtStart = _playerRating.value
 
         viewModelScope.launch {
-            val aiName = PlayerPreferences.randomAIName(aiDifficulty)
+            val aiName = PlayerPreferences.randomAIName(selectedAiRating)
             _player2Name.value = aiName
+            _opponentRating.value = aiSessionRating
             playerPreferences.setPlayer2Name(aiName)
         }
 
@@ -431,9 +523,12 @@ class GameViewModel @Inject constructor(
 
         gameMode = GameMode.PLAYER_VS_COMPUTER
         this.currentTimeControl = timeControl
-        aiDifficulty = playerPreferences.difficulty.first()
+        val selectedAiRating = playerPreferences.selectedAiRating.first()
+        aiProfile = AiStrengthProfile.forRating(selectedAiRating)
+        aiSessionRating = selectedAiRating.toFloat()
+        playerRatingAtStart = _playerRating.value
 
-        val aiName = PlayerPreferences.randomAIName(aiDifficulty)
+        val aiName = PlayerPreferences.randomAIName(selectedAiRating)
         if (humanSide == Player.PLAYER_1) {
             _player1Name.value = gameResult.player1Name
             _player2Name.value = aiName
@@ -444,6 +539,7 @@ class GameViewModel @Inject constructor(
             aiPlayer = Player.PLAYER_1
         }
         _humanSide.value = humanSide
+        _opponentRating.value = aiSessionRating
         viewModelScope.launch {
             playerPreferences.setPlayer2Name(aiName)
         }
