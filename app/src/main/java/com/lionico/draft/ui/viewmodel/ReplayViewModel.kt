@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lionico.draft.R
-import com.lionico.draft.data.ai.Difficulty
+import com.lionico.draft.data.ai.AiStrengthProfile
 import com.lionico.draft.data.engine.Board
 import com.lionico.draft.data.engine.GameEngine
 import com.lionico.draft.data.model.GameMove
@@ -176,7 +176,7 @@ class ReplayViewModel @Inject constructor(
                 gameEngine.loadPosition(board, playerToMove)
 
                 val best = withContext(Dispatchers.Default) {
-                    getAIMoveUseCase(Difficulty.HARD)
+                    getAIMoveUseCase(AiStrengthProfile.forRating(2250))
                 }
 
                 if (best != Move.NONE) {
