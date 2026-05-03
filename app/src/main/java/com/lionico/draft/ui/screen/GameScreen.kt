@@ -129,7 +129,7 @@ fun GameScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Main game UI (always present but hidden behind pre‑game overlay)
+            // Main game UI
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -149,13 +149,13 @@ fun GameScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "${playerRating.toInt()} Elo",
+                        text = stringResource(R.string.elo_format, playerRating.toInt()),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "${opponentRating.toInt()} Elo",
+                        text = stringResource(R.string.elo_format, opponentRating.toInt()),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
@@ -213,7 +213,7 @@ fun GameScreen(
                 )
             }
 
-            // Game over dialog (appears after rating animation dismissed)
+            // Game over dialog
             if (gameStatus != GameStatus.ONGOING && !showRatingAnimation && gamePhase != GamePhase.PRE_GAME) {
                 GameOverDialog(
                     gameStatus = gameStatus,
@@ -240,7 +240,7 @@ private fun PreGameOverlay(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.85f))
-            .clickable(enabled = false, onClick = {}), // consume all touches
+            .clickable(enabled = false, onClick = {}),
         contentAlignment = Alignment.Center
     ) {
         Column(
