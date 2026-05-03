@@ -46,6 +46,7 @@ import com.lionico.draft.ui.component.BoardView
 import com.lionico.draft.ui.component.ClockView
 import com.lionico.draft.ui.component.GameControls
 import com.lionico.draft.ui.component.GameStatusBar
+import com.lionico.draft.ui.component.QuoteDisplay
 import com.lionico.draft.ui.theme.RatingNegativeRed
 import com.lionico.draft.ui.theme.RatingNeutralGray
 import com.lionico.draft.ui.theme.RatingPositiveGreen
@@ -82,6 +83,8 @@ fun GameScreen(
     val opponentRating by viewModel.opponentRating.collectAsState()
     val ratingDelta by viewModel.ratingDelta.collectAsState()
     val showRatingAnimation by viewModel.showRatingAnimation.collectAsState()
+
+    val currentQuote by viewModel.currentQuote.collectAsState()
 
     LaunchedEffect(gameMode, timeControl, gameId, continueMoveIndex, humanSide) {
         if (gameId != null && continueMoveIndex != null && humanSide != null) {
@@ -131,7 +134,7 @@ fun GameScreen(
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-                // Player ratings row (fixed: using fillMaxWidth)
+                // Player ratings row
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -161,6 +164,9 @@ fun GameScreen(
                     isAIThinking = isAIThinking,
                     modifier = Modifier.padding(top = 4.dp)
                 )
+
+                // Global quote display above the board
+                QuoteDisplay(quote = currentQuote)
 
                 BoardView(
                     board = boardState,
