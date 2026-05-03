@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -131,10 +131,10 @@ fun GameScreen(
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-                // Player ratings row
+                // Player ratings row (fixed: using fillMaxWidth)
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -214,7 +214,7 @@ private fun RatingAnimationOverlay(
         visible = true
         delay(2500)
         visible = false
-        delay(300) // Allow exit animation
+        delay(300)
         onDismiss()
     }
 
