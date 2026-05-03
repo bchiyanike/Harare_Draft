@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/lionico/draft/ui/screen/GameScreen.kt
+// app/src/main/java/com/lionico/draft/ui/screen/GameScreen.kt
 package com.lionico.draft.ui.screen
 
 import androidx.compose.animation.AnimatedVisibility
@@ -201,7 +201,8 @@ fun GameScreen(
                     winner = winner,
                     player1Name = player1Name,
                     player2Name = player2Name,
-                    onNewGame = { viewModel.resetGame() },
+                    currentQuote = currentQuote,
+                    onRematch = { viewModel.resetGame() },
                     onMainMenu = onNavigateBack
                 )
             }
