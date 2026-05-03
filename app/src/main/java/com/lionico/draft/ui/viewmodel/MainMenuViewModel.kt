@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.datastore.PlayerPreferences
+import com.lionico.draft.data.repository.GameHistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainMenuViewModel @Inject constructor(
-    private val preferences: PlayerPreferences
+    private val preferences: PlayerPreferences,
+    private val historyRepository: GameHistoryRepository
 ) : ViewModel() {
 
     val playerNames = preferences.playerNames
@@ -25,6 +27,13 @@ class MainMenuViewModel @Inject constructor(
 
     val playerRating = preferences.playerRating
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1200f)
+
+    val lastRatingDelta = preferences.lastRatingDelta
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val gameCount = historyRepository.getAllGames()
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     fun setPlayerNames(player1: String, player2: String) {
         viewModelScope.launch {
