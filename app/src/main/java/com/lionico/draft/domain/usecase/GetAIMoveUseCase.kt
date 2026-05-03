@@ -2,7 +2,7 @@
 package com.lionico.draft.domain.usecase
 
 import com.lionico.draft.data.ai.AIPlayer
-import com.lionico.draft.data.ai.Difficulty
+import com.lionico.draft.data.ai.AiStrengthProfile
 import com.lionico.draft.data.engine.GameEngine
 import com.lionico.draft.data.model.Move
 import kotlinx.coroutines.Dispatchers
@@ -17,27 +17,27 @@ class GetAIMoveUseCase @Inject constructor(
     private val gameEngine: GameEngine,
     private val aiPlayer: AIPlayer
 ) {
-    
+
     /**
      * Computes and returns the best move for the AI.
      * This is a suspend function that runs on a background dispatcher.
-     * 
-     * @param difficulty The AI difficulty level
+     *
+     * @param profile The AI strength profile (Elo rating, depth, mistake probability)
      * @return The best move found, or Move.NONE if no moves are available
      */
-    suspend operator fun invoke(difficulty: Difficulty): Move {
+    suspend operator fun invoke(profile: AiStrengthProfile): Move {
         return withContext(Dispatchers.Default) {
             val board = gameEngine.getBoard()
             val currentPlayer = gameEngine.getCurrentPlayer()
-            
+
             aiPlayer.getBestMove(
                 board = board,
                 player = currentPlayer,
-                difficulty = difficulty
+                profile = profile
             )
         }
     }
-    
+
     /**
      * Returns a random move for the AI (useful for easy difficulty or testing).
      */
@@ -45,7 +45,7 @@ class GetAIMoveUseCase @Inject constructor(
         return withContext(Dispatchers.Default) {
             val board = gameEngine.getBoard()
             val currentPlayer = gameEngine.getCurrentPlayer()
-            
+
             aiPlayer.getRandomMove(board, currentPlayer)
         }
     }
