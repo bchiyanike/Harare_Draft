@@ -57,6 +57,7 @@ import com.lionico.draft.ui.component.SectionHeader
 import com.lionico.draft.ui.theme.live_badge_red
 import com.lionico.draft.ui.viewmodel.MainMenuViewModel
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
