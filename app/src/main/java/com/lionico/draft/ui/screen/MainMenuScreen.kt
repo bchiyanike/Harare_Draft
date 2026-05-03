@@ -8,13 +8,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -74,6 +78,7 @@ fun MainMenuScreen(
 
     val playerNames by viewModel.playerNames.collectAsStateWithLifecycle(initialValue = null)
     val currentDifficulty by viewModel.difficulty.collectAsStateWithLifecycle(initialValue = Difficulty.MEDIUM)
+    val playerRating by viewModel.playerRating.collectAsStateWithLifecycle(initialValue = 1200)
 
     val showComingSoonToast: () -> Unit = {
         Toast.makeText(context, R.string.coming_soon, Toast.LENGTH_SHORT).show()
@@ -98,6 +103,7 @@ fun MainMenuScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header with rating badge and settings
             item {
                 Row(
                     modifier = Modifier
@@ -106,13 +112,30 @@ fun MainMenuScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.EmojiEvents,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${playerRating.roundToInt()} Elo",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                     IconButton(
                         onClick = onSettings,
                         modifier = Modifier.padding(8.dp)
@@ -128,7 +151,7 @@ fun MainMenuScreen(
             }
 
             item {
-                SectionHeader(title = "Play")
+                SectionHeader(title = stringResource(R.string.quick_play))
             }
             item {
                 Button(
@@ -145,7 +168,7 @@ fun MainMenuScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "Play with a Friend",
+                        text = stringResource(R.string.play_with_friend_button),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -166,7 +189,7 @@ fun MainMenuScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "Play with the Computer",
+                        text = stringResource(R.string.play_with_computer_button),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -179,9 +202,9 @@ fun MainMenuScreen(
 
             item {
                 CompactLiveCard(
-                    title = "King Slayer Showdown",
-                    description = "Live commentary by Grandmaster Jay",
-                    badge = "LIVE"
+                    title = stringResource(R.string.app_name),
+                    description = stringResource(R.string.tagline),
+                    badge = stringResource(R.string.live_now)
                 )
             }
 
@@ -216,7 +239,7 @@ fun MainMenuScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "Game History",
+                        text = stringResource(R.string.game_history_button),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
