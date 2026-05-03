@@ -73,7 +73,7 @@ class QuoteManager @Inject constructor(
 
     private fun loadQuotes(): Map<QuoteType, List<QuoteEntry>> {
         return try {
-            val jsonStr = context.resources.openRawResource(R.raw.quotes)
+            val jsonStr = context.assets.open("quotes.json")
                 .bufferedReader().use { it.readText() }
             val jsonObject = JSONObject(jsonStr)
             mapOf(
@@ -100,7 +100,6 @@ class QuoteManager @Inject constructor(
     }
 
     private fun parseFallbackEntry(): QuoteEntry {
-        // fallbackQuote format: "quote text" — Author
         val quoteStart = fallbackQuote.indexOf('"') + 1
         val quoteEnd = fallbackQuote.lastIndexOf('"')
         val quote = if (quoteStart in 1..quoteEnd) {
