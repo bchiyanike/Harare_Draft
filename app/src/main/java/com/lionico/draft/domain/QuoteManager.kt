@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/lionico/draft/domain/QuoteManager.kt
+// app/src/main/java/com/lionico/draft/domain/QuoteManager.kt
 package com.lionico.draft.domain
 
 import android.content.Context
@@ -108,6 +108,6 @@ class QuoteManager @Inject constructor(
             fallbackQuote
         }
         val author = fallbackQuote.substringAfterLast("—").trim()
-        return QuoteEntry(quote, author.ifEmpty { "Unknown" })
+        return QuoteEntry(quote, author.ifEmpty { context.getString(R.string.quote_unknown_author) })
     }
 }
