@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -51,6 +53,7 @@ import com.lionico.draft.ui.theme.RatingNegativeRed
 import com.lionico.draft.ui.theme.RatingNeutralGray
 import com.lionico.draft.ui.theme.RatingPositiveGreen
 import com.lionico.draft.ui.viewmodel.GameMode
+import com.lionico.draft.ui.viewmodel.GamePhase
 import com.lionico.draft.ui.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 
@@ -85,6 +88,10 @@ fun GameScreen(
     val showRatingAnimation by viewModel.showRatingAnimation.collectAsState()
 
     val currentQuote by viewModel.currentQuote.collectAsState()
+
+    // Pre‑game states
+    val gamePhase by viewModel.gamePhase.collectAsState()
+    val countdownSeconds by viewModel.countdownSeconds.collectAsState()
 
     LaunchedEffect(gameMode, timeControl, gameId, continueMoveIndex, humanSide) {
         if (gameId != null && continueMoveIndex != null && humanSide != null) {
@@ -122,6 +129,7 @@ fun GameScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Main game UI (always present but hidden behind pre‑game overlay)
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -134,7 +142,6 @@ fun GameScreen(
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-                // Player ratings row
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -165,7 +172,6 @@ fun GameScreen(
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
-                // Global quote display above the board
                 QuoteDisplay(quote = currentQuote)
 
                 BoardView(
@@ -186,6 +192,19 @@ fun GameScreen(
                 )
             }
 
+            // Pre‑game countdown overlay
+            if (gamePhase == GamePhase.PRE_GAME) {
+                PreGameOverlay(
+                    countdown = countdownSeconds,
+                    quote = currentQuote,
+                    rating = playerRating.toInt(),
+                    onCancel = {
+                        viewModel.cancelPreGame()
+                        onNavigateBack()
+                    }
+                )
+            }
+
             // Rating animation overlay
             if (showRatingAnimation) {
                 RatingAnimationOverlay(
@@ -195,7 +214,7 @@ fun GameScreen(
             }
 
             // Game over dialog (appears after rating animation dismissed)
-            if (gameStatus != GameStatus.ONGOING && !showRatingAnimation) {
+            if (gameStatus != GameStatus.ONGOING && !showRatingAnimation && gamePhase != GamePhase.PRE_GAME) {
                 GameOverDialog(
                     gameStatus = gameStatus,
                     winner = winner,
@@ -205,6 +224,66 @@ fun GameScreen(
                     onRematch = { viewModel.resetGame() },
                     onMainMenu = onNavigateBack
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreGameOverlay(
+    countdown: Int,
+    quote: String,
+    rating: Int,
+    onCancel: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.85f))
+            .clickable(enabled = false, onClick = {}), // consume all touches
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.pre_game_starts_in),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = countdown.toString(),
+                fontSize = 64.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            if (quote.isNotBlank()) {
+                Text(
+                    text = quote,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            Text(
+                text = stringResource(R.string.pre_game_rating_label, rating),
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = onCancel,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text(stringResource(R.string.cancel))
             }
         }
     }
