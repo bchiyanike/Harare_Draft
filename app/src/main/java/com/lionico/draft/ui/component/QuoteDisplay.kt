@@ -1,4 +1,5 @@
-package com.yourapp.ui.component
+// File: app/src/main/java/com/lionico/draft/ui/component/QuoteDisplay.kt
+package com.lionico.draft.ui.component
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
