@@ -1,7 +1,9 @@
+// File: app/src/main/java/com/lionico/draft/ui/viewmodel/SettingsViewModel.kt
 package com.lionico.draft.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lionico.draft.data.ai.AiStrengthProfile
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.datastore.PlayerPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +29,9 @@ class SettingsViewModel @Inject constructor(
     val difficulty = preferences.difficulty
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Difficulty.MEDIUM)
 
+    val selectedAiRating = preferences.selectedAiRating
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AiStrengthProfile.DEFAULT.eloRating)
+
     val soundEnabled = preferences.soundEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -43,6 +48,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setDifficulty(difficulty: Difficulty) {
         viewModelScope.launch { preferences.setDifficulty(difficulty) }
+    }
+
+    fun setSelectedAiRating(rating: Int) {
+        viewModelScope.launch { preferences.setSelectedAiRating(rating) }
     }
 
     fun setSoundEnabled(enabled: Boolean) {
