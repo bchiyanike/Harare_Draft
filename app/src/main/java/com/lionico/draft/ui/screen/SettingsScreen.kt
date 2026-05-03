@@ -25,9 +25,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lionico.draft.R
 import com.lionico.draft.data.ai.AiStrengthProfile
+import com.lionico.draft.ui.component.QuoteDisplay
 import com.lionico.draft.ui.viewmodel.SettingsViewModel
 
 @Composable
@@ -55,6 +53,7 @@ fun SettingsScreen(
     val selectedAiRating by viewModel.selectedAiRating.collectAsStateWithLifecycle()
     val soundEnabled by viewModel.soundEnabled.collectAsStateWithLifecycle()
     val hapticEnabled by viewModel.hapticEnabled.collectAsStateWithLifecycle()
+    val currentQuote by viewModel.currentQuote.collectAsStateWithLifecycle(initialValue = "")
 
     // Map rating to slider index (0..8)
     val currentIndex = AiStrengthProfile.PRESETS.indexOfFirst { it.eloRating == selectedAiRating }
@@ -103,6 +102,11 @@ fun SettingsScreen(
                         color = Color.White
                     )
                 }
+            }
+
+            // Global quote display
+            item {
+                QuoteDisplay(quote = currentQuote)
             }
 
             // Player Names
