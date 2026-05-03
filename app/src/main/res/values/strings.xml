@@ -41,6 +41,10 @@
     <string name="players_label">players</string>
     <string name="games_label">games</string>
 
+    <!-- Default Names -->
+    <string name="default_player1_name">Player 1</string>
+    <string name="default_player2_name">Player 2</string>
+
     <!-- Difficulty -->
     <string name="difficulty_easy">Easy</string>
     <string name="difficulty_medium">Medium</string>
@@ -72,6 +76,7 @@
     <string name="player_1_wins">Player 1 Wins!</string>
     <string name="player_2_wins">Player 2 Wins!</string>
     <string name="draw">Draw!</string>
+    <string name="draw_result">Draw</string>
     <string name="congratulations_p1">Congratulations! Player 1 has won the game.</string>
     <string name="congratulations_p2">Congratulations! Player 2 has won the game.</string>
     <string name="draw_message">Neither player can force a win. The game ends in a draw.</string>
