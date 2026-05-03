@@ -53,6 +53,7 @@ import com.lionico.draft.data.model.TimeControl
 import com.lionico.draft.ui.component.ClockSelectionSheet
 import com.lionico.draft.ui.component.FriendOptionsSheet
 import com.lionico.draft.ui.component.PlayerNameDialog
+import com.lionico.draft.ui.component.QuoteDisplay
 import com.lionico.draft.ui.component.SectionHeader
 import com.lionico.draft.ui.theme.live_badge_red
 import com.lionico.draft.ui.viewmodel.MainMenuViewModel
@@ -81,6 +82,7 @@ fun MainMenuScreen(
     val playerRating by viewModel.playerRating.collectAsStateWithLifecycle(initialValue = 1200)
     val lastDelta by viewModel.lastRatingDelta.collectAsStateWithLifecycle(initialValue = 0)
     val gameCount by viewModel.gameCount.collectAsStateWithLifecycle(initialValue = 0)
+    val currentQuote by viewModel.currentQuote.collectAsStateWithLifecycle(initialValue = "")
 
     val showComingSoonToast: () -> Unit = {
         Toast.makeText(context, R.string.coming_soon, Toast.LENGTH_SHORT).show()
@@ -174,6 +176,10 @@ fun MainMenuScreen(
             }
 
             item {
+                QuoteDisplay(quote = currentQuote)
+            }
+
+            item {
                 SectionHeader(title = stringResource(R.string.quick_play))
             }
             item {
@@ -186,7 +192,7 @@ fun MainMenuScreen(
                         .fillMaxWidth()
                         .height(64.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -207,7 +213,7 @@ fun MainMenuScreen(
                         .fillMaxWidth()
                         .height(64.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                        containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.30f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -238,7 +244,7 @@ fun MainMenuScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -257,7 +263,7 @@ fun MainMenuScreen(
                         .fillMaxWidth()
                         .height(48.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                        containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.30f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
