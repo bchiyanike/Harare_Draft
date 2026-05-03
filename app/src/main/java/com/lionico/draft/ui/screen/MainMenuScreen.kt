@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/lionico/draft/ui/screen/MainMenuScreen.kt
+// app/src/main/java/com/lionico/draft/ui/screen/MainMenuScreen.kt
 package com.lionico.draft.ui.screen
 
 import android.widget.Toast
@@ -29,6 +29,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +39,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -58,6 +59,7 @@ import com.lionico.draft.ui.component.SectionHeader
 import com.lionico.draft.ui.theme.live_badge_red
 import com.lionico.draft.ui.viewmodel.MainMenuViewModel
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,248 +90,282 @@ fun MainMenuScreen(
         Toast.makeText(context, R.string.coming_soon, Toast.LENGTH_SHORT).show()
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Image(
-            painter = painterResource(id = R.drawable.castle_bg),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f),
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        },
+        containerColor = Color.Transparent // let the background image show through
+    ) { paddingValues ->
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.4f))
-        )
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(paddingValues)
         ) {
-            // Header with player name, games count, rating, and settings
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Player Name
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = playerNames?.player1Name ?: "You",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
+            Image(
+                painter = painterResource(id = R.drawable.castle_bg),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.45f))
+            )
 
-                    // Games vs AI count
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "⚔️ $gameCount",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    // Elo rating with arrow
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "${playerRating.toInt()}",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        if (lastDelta != 0) {
-                            val arrow = if (lastDelta > 0) "⬆️" else "⬇️"
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Header with player name, games count, rating, and settings
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Player Name
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = arrow,
-                                fontSize = 14.sp
+                                text = playerNames?.player1Name
+                                    ?: stringResource(R.string.you),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        // Games vs AI count
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "⚔️ $gameCount",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        // Elo rating with arrow
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.EmojiEvents,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${playerRating.toInt()}",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if (lastDelta != 0) {
+                                val arrow = if (lastDelta > 0) "⬆️" else "⬇️"
+                                Text(
+                                    text = arrow,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Settings icon
+                        IconButton(onClick = onSettings, modifier = Modifier.size(32.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = stringResource(R.string.settings),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
+                }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                item {
+                    QuoteDisplay(quote = currentQuote)
+                }
 
-                    // Settings icon
-                    IconButton(onClick = onSettings, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings),
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                item {
+                    SectionHeader(title = stringResource(R.string.quick_play))
+                }
+                item {
+                    Button(
+                        onClick = {
+                            pendingMode = "friend"
+                            showClockSheet = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.play_with_friend_button),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                item {
+                    Button(
+                        onClick = {
+                            pendingMode = "computer"
+                            showClockSheet = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.30f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.play_with_computer_button),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                item {
+                    SectionHeader(title = stringResource(R.string.live_now))
+                }
+
+                item {
+                    CompactLiveCard(
+                        title = stringResource(R.string.app_name),
+                        description = stringResource(R.string.tagline),
+                        badge = stringResource(R.string.live_now)
+                    )
+                }
+
+                item {
+                    Button(
+                        onClick = {
+                            val difficulties = Difficulty.entries
+                            val randomDifficulty = difficulties[Random.nextInt(difficulties.size)]
+                            val clocks = TimeControl.PRESETS
+                            val randomClock = clocks[Random.nextInt(clocks.size)]
+                            // Apply the random difficulty and clock
+                            viewModel.setDifficulty(randomDifficulty)
+                            onPlayVsComputer(randomClock)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.quick_random_play),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
+
+                item {
+                    Button(
+                        onClick = onHistory,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.30f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.game_history_button),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
             }
 
-            item {
-                QuoteDisplay(quote = currentQuote)
-            }
-
-            item {
-                SectionHeader(title = stringResource(R.string.quick_play))
-            }
-            item {
-                Button(
-                    onClick = {
-                        pendingMode = "friend"
-                        showClockSheet = true
+            if (showClockSheet) {
+                ClockSelectionSheet(
+                    onSelect = { clock ->
+                        showClockSheet = false
+                        selectedClock = clock
+                        if (pendingMode == "friend") {
+                            showFriendOptions = true
+                        } else if (pendingMode == "computer") {
+                            onPlayVsComputer(clock)
+                        }
+                        pendingMode = null
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.play_with_friend_button),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            item {
-                Button(
-                    onClick = {
-                        pendingMode = "computer"
-                        showClockSheet = true
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.30f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.play_with_computer_button),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            item {
-                SectionHeader(title = stringResource(R.string.live_now))
-            }
-
-            item {
-                CompactLiveCard(
-                    title = stringResource(R.string.app_name),
-                    description = stringResource(R.string.tagline),
-                    badge = stringResource(R.string.live_now)
+                    onDismiss = {
+                        showClockSheet = false
+                        pendingMode = null
+                    }
                 )
             }
 
-            item {
-                Button(
-                    onClick = showComingSoonToast,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.create_game),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            if (showFriendOptions && selectedClock != null) {
+                FriendOptionsSheet(
+                    onSameDevice = {
+                        showFriendOptions = false
+                        onPlayVsFriend(selectedClock!!)
+                    },
+                    onBluetooth = {
+                        showFriendOptions = false
+                        showComingSoonToast()
+                    },
+                    onOnline = {
+                        showFriendOptions = false
+                        showComingSoonToast()
+                    },
+                    onDismiss = {
+                        showFriendOptions = false
+                    }
+                )
             }
 
-            item {
-                Button(
-                    onClick = onHistory,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.30f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.game_history_button),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+            if (showNameDialog && playerNames != null) {
+                PlayerNameDialog(
+                    currentPlayer1Name = playerNames!!.player1Name,
+                    currentPlayer2Name = playerNames!!.player2Name,
+                    currentDifficulty = currentDifficulty,
+                    isPlayerVsAI = false,
+                    onConfirm = { name1, name2, difficulty ->
+                        scope.launch {
+                            viewModel.setPlayerNames(name1, name2)
+                            viewModel.setDifficulty(difficulty)
+                        }
+                        showNameDialog = false
+                    },
+                    onDismiss = { showNameDialog = false }
+                )
             }
-        }
-
-        if (showClockSheet) {
-            ClockSelectionSheet(
-                onSelect = { clock ->
-                    showClockSheet = false
-                    selectedClock = clock
-                    if (pendingMode == "friend") {
-                        showFriendOptions = true
-                    } else if (pendingMode == "computer") {
-                        onPlayVsComputer(clock)
-                    }
-                    pendingMode = null
-                },
-                onDismiss = {
-                    showClockSheet = false
-                    pendingMode = null
-                }
-            )
-        }
-
-        if (showFriendOptions && selectedClock != null) {
-            FriendOptionsSheet(
-                onSameDevice = {
-                    showFriendOptions = false
-                    onPlayVsFriend(selectedClock!!)
-                },
-                onBluetooth = {
-                    showFriendOptions = false
-                    showComingSoonToast()
-                },
-                onOnline = {
-                    showFriendOptions = false
-                    showComingSoonToast()
-                },
-                onDismiss = {
-                    showFriendOptions = false
-                }
-            )
-        }
-
-        if (showNameDialog && playerNames != null) {
-            PlayerNameDialog(
-                currentPlayer1Name = playerNames!!.player1Name,
-                currentPlayer2Name = playerNames!!.player2Name,
-                currentDifficulty = currentDifficulty,
-                isPlayerVsAI = false,
-                onConfirm = { name1, name2, difficulty ->
-                    scope.launch {
-                        viewModel.setPlayerNames(name1, name2)
-                        viewModel.setDifficulty(difficulty)
-                    }
-                    showNameDialog = false
-                },
-                onDismiss = { showNameDialog = false }
-            )
         }
     }
 }
@@ -360,13 +396,13 @@ private fun CompactLiveCard(
                     text = title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
                 Text(
                     text = description,
                     fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     maxLines = 1
                 )
             }
