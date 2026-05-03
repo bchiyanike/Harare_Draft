@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.lionico.draft.data.ai.AiStrengthProfile
 import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.datastore.PlayerPreferences
+import com.lionico.draft.domain.QuoteManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -15,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val preferences: PlayerPreferences
+    private val preferences: PlayerPreferences,
+    quoteManager: QuoteManager
 ) : ViewModel() {
 
     val player1Name = preferences.playerNames
@@ -37,6 +40,8 @@ class SettingsViewModel @Inject constructor(
 
     val hapticEnabled = preferences.hapticEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val currentQuote: StateFlow<String> = quoteManager.currentQuote
 
     fun setPlayer1Name(name: String) {
         viewModelScope.launch { preferences.setPlayer1Name(name) }
