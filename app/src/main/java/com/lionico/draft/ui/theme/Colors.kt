@@ -29,6 +29,11 @@ val MoveCurrentText = Color.White
 val RedSideColor = Color(0xFFD32F2F)   // serious red
 val BlackSideColor = Color(0xFF424242) // serious dark grey/black
 
+// Rating delta colours
+val RatingPositiveGreen = Color(0xFF2E7D32)   // Tournament Felt / positive change
+val RatingNegativeRed = Color(0xFFC0392B)     // Crimson Tension / negative change
+val RatingNeutralGray = Color(0xFF9E9E9E)     // Neutral / zero change
+
 val LightColorScheme = lightColorScheme(
     primary = Color(0xFF6750A4),
     onPrimary = Color(0xFFFFFFFF),
