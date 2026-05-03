@@ -7,57 +7,35 @@ import com.lionico.draft.data.ai.Difficulty
 import com.lionico.draft.data.datastore.PlayerPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MainMenuViewModel @Inject constructor(
-    private val playerPreferences: PlayerPreferences
+    private val preferences: PlayerPreferences
 ) : ViewModel() {
 
-    val playerNames = playerPreferences.playerNames
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+    val playerNames = preferences.playerNames
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val difficulty = playerPreferences.difficulty
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = Difficulty.MEDIUM
-        )
+    val difficulty = preferences.difficulty
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Difficulty.MEDIUM)
+
+    val playerRating = preferences.playerRating
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1200f)
 
     fun setPlayerNames(player1: String, player2: String) {
         viewModelScope.launch {
-            playerPreferences.setPlayer1Name(player1)
-            playerPreferences.setPlayer2Name(player2)
-        }
-    }
-
-    fun setPlayer1Name(name: String) {
-        viewModelScope.launch {
-            playerPreferences.setPlayer1Name(name)
-        }
-    }
-
-    fun setPlayer2Name(name: String) {
-        viewModelScope.launch {
-            playerPreferences.setPlayer2Name(name)
+            preferences.setPlayer1Name(player1)
+            preferences.setPlayer2Name(player2)
         }
     }
 
     fun setDifficulty(difficulty: Difficulty) {
         viewModelScope.launch {
-            playerPreferences.setDifficulty(difficulty)
-        }
-    }
-
-    fun resetToDefaultNames() {
-        viewModelScope.launch {
-            playerPreferences.resetToDefault()
+            preferences.setDifficulty(difficulty)
         }
     }
 }
