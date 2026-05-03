@@ -6,8 +6,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.lionico.draft.data.ai.AiStrengthProfile
 import com.lionico.draft.data.ai.Difficulty
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -33,17 +36,35 @@ class PlayerPreferences @Inject constructor(
         private val SOUND_ENABLED = booleanPreferencesKey("sound_enabled")
         private val HAPTIC_ENABLED = booleanPreferencesKey("haptic_enabled")
 
-        val AI_NAMES_EASY = listOf("Mhofela", "Mukanya", "Mhukahuru")
-        val AI_NAMES_MEDIUM = listOf("Mugabe", "Giribheti", "Tambaoga")
-        val AI_NAMES_HARD = listOf("Tshaka", "Changamire", "Nkomo")
+        private val PLAYER_RATING = floatPreferencesKey("player_rating")
+        private val SELECTED_AI_RATING = intPreferencesKey("selected_ai_rating")
 
+        val AI_NAMES_BY_RATING = mapOf(
+            900  to listOf("Mhofela", "Mukanya", "Mhukahuru"),
+            1125 to listOf("Gudo", "Shumba", "Dube"),
+            1350 to listOf("Mugabe", "Giribheti", "Tambaoga"),
+            1575 to listOf("Tshaka", "Changamire", "Nkomo"),
+            1800 to listOf("Mwari", "Sekuru", "Mudzimu"),
+            2025 to listOf("Gorilla", "Ngwena", "Mvuu"),
+            2250 to listOf("Mhondoro", "Chaminuka", "Nehanda"),
+            2475 to listOf("Kaguvi", "Lobengula", "Mzilikazi"),
+            2700 to listOf("Monomotapa", "Changamire", "Rozvi")
+        )
+
+        fun randomAIName(rating: Int): String {
+            val pool = AI_NAMES_BY_RATING[rating] ?: AI_NAMES_BY_RATING[1575]!!
+            return "${pool.random()} (${rating})"
+        }
+
+        // Legacy difficulty-based name pools (for backward compatibility if needed)
         fun randomAIName(difficulty: Difficulty): String {
-            val pool = when (difficulty) {
-                Difficulty.EASY -> AI_NAMES_EASY
-                Difficulty.MEDIUM -> AI_NAMES_MEDIUM
-                Difficulty.HARD -> AI_NAMES_HARD
+            // Map of difficulty to a default rating to pick a name pool
+            val rating = when (difficulty) {
+                Difficulty.EASY -> 900
+                Difficulty.MEDIUM -> 1575
+                Difficulty.HARD -> 2250
             }
-            return "${pool.random()} - AI"
+            return randomAIName(rating)
         }
     }
 
@@ -60,6 +81,14 @@ class PlayerPreferences @Inject constructor(
             "hard" -> Difficulty.HARD
             else -> Difficulty.MEDIUM
         }
+    }
+
+    val playerRating: Flow<Float> = context.dataStore.data.map { prefs ->
+        prefs[PLAYER_RATING] ?: 1200f
+    }
+
+    val selectedAiRating: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[SELECTED_AI_RATING] ?: AiStrengthProfile.DEFAULT.eloRating
     }
 
     val soundEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -85,6 +114,18 @@ class PlayerPreferences @Inject constructor(
     suspend fun setDifficulty(difficulty: Difficulty) {
         context.dataStore.edit { prefs ->
             prefs[DIFFICULTY] = difficulty.name.lowercase()
+        }
+    }
+
+    suspend fun setPlayerRating(rating: Float) {
+        context.dataStore.edit { prefs ->
+            prefs[PLAYER_RATING] = rating
+        }
+    }
+
+    suspend fun setSelectedAiRating(rating: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[SELECTED_AI_RATING] = rating
         }
     }
 
