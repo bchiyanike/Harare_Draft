@@ -28,6 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -39,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -106,7 +108,7 @@ fun MainMenuScreen(
                 )
             )
         },
-        containerColor = Color.Transparent // let the background image show through
+        containerColor = Color.Transparent
     ) { paddingValues ->
         Box(
             modifier = modifier
@@ -153,7 +155,7 @@ fun MainMenuScreen(
                         // Games vs AI count
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "⚔️ $gameCount",
+                                text = stringResource(R.string.game_count_format, gameCount),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
@@ -178,9 +180,9 @@ fun MainMenuScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             if (lastDelta != 0) {
-                                val arrow = if (lastDelta > 0) "⬆️" else "⬇️"
+                                val arrowRes = if (lastDelta > 0) R.string.arrow_up else R.string.arrow_down
                                 Text(
-                                    text = arrow,
+                                    text = stringResource(arrowRes),
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -270,7 +272,6 @@ fun MainMenuScreen(
                             val randomDifficulty = difficulties[Random.nextInt(difficulties.size)]
                             val clocks = TimeControl.PRESETS
                             val randomClock = clocks[Random.nextInt(clocks.size)]
-                            // Apply the random difficulty and clock
                             viewModel.setDifficulty(randomDifficulty)
                             onPlayVsComputer(randomClock)
                         },
