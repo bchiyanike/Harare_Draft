@@ -25,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,8 +33,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lionico.draft.R
 import com.lionico.draft.data.model.GameResult
+import com.lionico.draft.ui.component.QuoteDisplay
 import com.lionico.draft.ui.viewmodel.HistoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +47,8 @@ fun HistoryScreen(
     onAnalyze: (Long) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
-    val games by viewModel.history.collectAsState(initial = emptyList())
+    val games by viewModel.history.collectAsStateWithLifecycle(initialValue = emptyList())
+    val currentQuote by viewModel.currentQuote.collectAsStateWithLifecycle(initialValue = "")
 
     Scaffold(
         topBar = {
@@ -67,28 +69,35 @@ fun HistoryScreen(
             )
         }
     ) { paddingValues ->
-        if (games.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(stringResource(R.string.no_games_played), fontSize = 16.sp)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                items(games, key = { it.id }) { game ->
-                    HistoryItem(
-                        game = game,
-                        onReplay = { onReplay(game.id) },
-                        onAnalyze = { onAnalyze(game.id) }
-                    )
-                    HorizontalDivider(thickness = 0.5.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Global quote display at top
+            QuoteDisplay(quote = currentQuote)
+
+            if (games.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(stringResource(R.string.no_games_played), fontSize = 16.sp)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(games, key = { it.id }) { game ->
+                        HistoryItem(
+                            game = game,
+                            onReplay = { onReplay(game.id) },
+                            onAnalyze = { onAnalyze(game.id) }
+                        )
+                        HorizontalDivider(thickness = 0.5.dp)
+                    }
                 }
             }
         }
